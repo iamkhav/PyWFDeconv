@@ -1,5 +1,4 @@
-# This requirements file only includes base packages.
-# Dependencies should be auto-installed.
+# This shouldn't be used at the moment.
 # IMPORTANT:  Torch is NOT included here and should be downloaded accoring to your system from https://pytorch.org/get-started/locally/
 #             Make sure you're getting the correct CUDA version (although it should be backwards compatible) and use Pip as the package manager.
 
