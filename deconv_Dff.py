@@ -53,7 +53,7 @@ def deconv(data_path):
 
 
     partial_f = partial(convar.convar_half_torch, odd_traces, gamma)
-    with Pool(8) as p:
+    with Pool(2) as p:
         p.map(partial_f, all_lambda)
 
 

@@ -1,5 +1,5 @@
 from import_library import *
-example_data_path = r"F:\Uni Goethe\Informatik\BA\Python_Wide_Field_Deconvolution\Clancy_etal_fluorescence_example.mat"
+example_data_path = r"Clancy_etal_fluorescence_example.mat"
 
 """
 This is a straight (as straight as possible) translation from the matlab code included in the following paper:
