@@ -8,10 +8,12 @@ from scipy.io import loadmat
 import sys
 import os
 import time
+from functools import partial
+
+# Multiprocessing
+from torch.multiprocessing import Process, Pool
+import torch.multiprocessing as mp
 
 # Own scripts
 import convar
 import deconv_Dff
-
-# Multiprocessing
-from multiprocessing import Process
