@@ -5,6 +5,7 @@ import torch
 
 # I/O and Accessory
 from scipy.io import loadmat
+from scipy import linalg
 import sys
 import os
 import time

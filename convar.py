@@ -74,6 +74,81 @@ def convar_np(y, gamma, _lambda):
 
     return r_final,r1,beta_0
 
+def convar_np_openblas(y, gamma, _lambda):
+    """
+    convar is a straight translation from matlab into numpy.
+    Performance is about 2.5x worse than the matlab function.
+    -Amon
+
+    :param y:
+    :param gamma:
+    :param _lambda:
+    :return:
+    """
+    start = time.time()
+    y = np.copy(y, order="F")
+
+    T = np.shape(y)[0]
+    P = np.identity(T) - 1 / T * np.ones((T,T))
+    P = np.copy(P, order="F")
+    tildey = linalg.blas.sgemm(1, P, y)
+
+    # will be used later to reconstruct the calcium from the deconvoled rates
+    Dinv = np.zeros((T, T), order="F")
+
+    for k in range(0, T):
+        for j in range(0, k + 1):
+            exp = (k - j)
+            Dinv[k][j] = gamma ** exp
+
+    A = linalg.blas.sgemm(1, P, Dinv)
+
+    L1 = np.zeros((T, T), order="F")
+    for i in range(0, T):
+        for j in range(0, T):
+            if(i >= 2 and j >= 1):
+                if(i == j):
+                    L1[i][j] = 1
+                if(i == j+1):
+                    L1[i][j] = -1
+
+
+    Z = linalg.blas.sgemm(1, np.transpose(L1), L1)
+
+    # large step size that ensures converges
+    s = 0.5 * ( (1-gamma)**2 / ( (1-gamma**T)**2 + (1-gamma)**2 * 4 * _lambda ) )
+
+    # deconvolution
+    # initializing
+    # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
+    r = np.ones((200, 50), order="F")  # Test line for consistency instead of randomness
+
+    mid = time.time()
+
+
+
+    for i in range(0, 10000):
+        Ar = linalg.blas.sgemm(1, A, r)
+        tmAr = (tildey - Ar)
+        At_tmAr = linalg.blas.sgemm(1, np.transpose(A), tmAr)
+        Zr = linalg.blas.sgemm(1, Z, r)
+        x = r + s*At_tmAr - s*_lambda*Zr
+        r = x
+        r[r < 0] = 0
+        r[0] = x[0]
+
+
+    r_final = r[1:]
+    r1 = r[0]
+    beta_0 = np.mean(y - linalg.blas.sgemm(1, Dinv, r), axis=0)
+
+    print("------------------------------------------------------")
+    print("OpenBLAS stats")
+    print("Mid convar time:", mid-start)
+    print("Convar time:", time.time()-start)
+
+    return r_final,r1,beta_0
+
 
 def convar_torch(y, gamma, _lambda):
     """
