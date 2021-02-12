@@ -86,7 +86,7 @@ def convar_torch(y, gamma, _lambda):
     :return:
     """
     # INIT
-    y = torch.from_numpy(y).float()
+    y = torch.from_numpy(y)
     start = time.time()
 
 
@@ -163,7 +163,7 @@ def convar_torch_cuda(y, gamma, _lambda):
     if(device.type != "cuda"):
         print("CUDA not available")
         raise Exception("NO CUDA")
-    y = torch.from_numpy(y).float().to(device)
+    y = torch.from_numpy(y).to(device)
     start = time.time()
 
 
@@ -243,7 +243,7 @@ def convar_torch_cuda_direct(y, gamma, _lambda):
     if(device.type != "cuda"):
         print("CUDA not available")
         raise Exception("NO CUDA")
-    y = torch.from_numpy(y).float().to(device)
+    y = torch.from_numpy(y).to(device)
     start = time.time()
 
 

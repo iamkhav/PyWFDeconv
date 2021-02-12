@@ -52,9 +52,9 @@ def deconv(data_path):
         # Done token
 
 
-    partial_f = partial(convar.convar_half_torch, odd_traces, gamma)
-    with Pool(2) as p:
-        p.map(partial_f, all_lambda)
+    # partial_f = partial(convar.convar_half_torch, odd_traces, gamma)
+    # with Pool(2) as p:
+    #     p.map(partial_f, all_lambda)
 
 
 
@@ -68,10 +68,11 @@ def deconv(data_path):
     print(end - start)
 
     # r, r1, beta0 = convar.convar_half_torch(odd_traces, gamma, all_lambda[0])  # Right now, using numpy to initialize the data and then torch for the big matrix ops is quickest
-    # r, r1, beta1 = convar.convar_torch(odd_traces, gamma, all_lambda[0])
+    r, r1, beta1 = convar.convar_torch(odd_traces, gamma, all_lambda[0])
     # r, r1, beta2 = convar.convar_torch_cuda_direct(odd_traces, gamma, all_lambda[0])
     # r, r1, beta3 = convar.convar_torch_cuda(odd_traces, gamma, all_lambda[0])
     # r, r1, beta4 = convar.convar_np(odd_traces, gamma, all_lambda[0])
+    print(r.dtype)
     # print("0", beta0)
     # print("1", beta1)
     # print("2", beta2)

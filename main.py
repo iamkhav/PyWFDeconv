@@ -17,6 +17,8 @@ Todo
 np.set_printoptions(threshold=sys.maxsize, precision=10)
 torch.set_printoptions(threshold=sys.maxsize, precision=10)
 
+# Set Torch default datatype to double, replicating the Matlab calculations
+torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
     deconv_Dff.deconv(example_data_path)
