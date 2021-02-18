@@ -1,4 +1,8 @@
-from import_library import *
+import torch
+import numpy as np
+import deconv_Dff
+import sys
+
 example_data_path = r"Clancy_etal_fluorescence_example.mat"
 
 """
@@ -9,9 +13,8 @@ Todo
 """
 
 #Todo
-# Implement convar alternative in Pytorch (for cuda acceleration)
 # Maybe everything else should also have a Pytorch version.. ?? Numpy CPU is very slow, slower than matlab on some Calcs
-# Warum sind die Values von beta0 nach 4. Nachkommastelle verschieden je nach Implementation?!?!?!
+# Warum sind die Values von beta0 nach 4. Nachkommastelle verschieden bei OPENBLAS scipy???
 
 # To see full arrays
 np.set_printoptions(threshold=sys.maxsize, precision=10)

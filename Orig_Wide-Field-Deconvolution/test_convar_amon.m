@@ -1,4 +1,4 @@
-function [L1] = convar(y,gamma,lambda)
+function [r_final,r1,beta_0] = test_convar_amon(y,gamma,lambda)
 % This function implements the algorithm continuously varying
 % Inputs:  y - row vector, the measured fluorescence trace; 
 % if y is a matrix each row in the matrix is treated as a fluorescence trace
@@ -8,12 +8,12 @@ function [L1] = convar(y,gamma,lambda)
 % Returns the deconvolved rate r_final (T-1xn)
 % the first point of the calcium r1 (1xn)
 % and the offset beta 0 (1Xn)
-tic
+
 T = size(y,1);
 P = eye(T)-1/T*ones(T);
 tildey = P*y;
-% 
-% % build A and Z
+
+% build A and Z
 Dinv = zeros(T,T); 
 insert_vec = 1;
 for k = 1:T
@@ -28,7 +28,6 @@ s = 0.5*((1-gamma)^2/((1-gamma^T)^2+(1-gamma)^2*4*lambda));
 
 % deconvolution 
 % initializing
-
 % r = rand(size(y));
 r = ones(size(y));
 for i = 1:10000
@@ -41,10 +40,7 @@ for i = 1:10000
     r(r<0) = 0;
     r(1,:) = x(1,:);
 end
-
 r_final = r(2:end,:);
 r1 = r(1,:);
 beta_0 = mean(y-Dinv*r);
-toc
 end
-

@@ -37,6 +37,8 @@ rep = size(cal_data,2);
         
 % serach over a range of lambda/smoothing values to find the best one
 all_lambda = [80 40 20 10 7 5 3 2 1 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1 0.05 0.01];
+% all_lambda = [1 2];
+
 
 % will be used later to reconstruct the calcium from the deconvoled rates
 Dinv = zeros(T,T); 
@@ -50,6 +52,18 @@ end
 % here the penalty (l2) is the same as the fluctuations (l2)
 penalty_size_convar = zeros(length(all_lambda),rep);
 calcium_dif_convar = zeros(length(all_lambda),rep);
-
-
-[TEMP] = test_convar_amon(odd_traces,gamma,all_lambda(1)); 
+tic
+for k = 1:length(all_lambda)
+    lambda = all_lambda(k); 
+    [r, r1,beta0] = test_convar_amon(odd_traces,gamma,lambda); 
+    % calculating the changes in spiking rate in each deconvolve trace
+    r_diff = diff(r(2:end,:));
+    % calculating the penalty in each trace   
+    penalty_size_convar(k,:) = mean(r_diff.^2);
+    % reconstruct the calcium
+    c_odd = Dinv*[r1; r];
+    calcium_dif_convar(k,:) = mean(abs(c_odd+beta0-even_traces));
+end
+[min_error_convar,best_lambda_convar_indx] = min(mean(calcium_dif_convar,2));
+best_lambda_convar = all_lambda(best_lambda_convar_indx);
+toc

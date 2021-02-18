@@ -1,8 +1,13 @@
-from import_library import *
-
-# from torch.multiprocessing import Process
+from scipy.io import loadmat
+import numpy as np
+from torch.multiprocessing import Process, Pool
+import torch.multiprocessing as mp
+import convar
+import time
 
 def deconv(data_path):
+    start = time.time()
+
     # Load data
     paper_data_import = loadmat(data_path)
     cal_data = paper_data_import["cal_data"]
@@ -10,7 +15,7 @@ def deconv(data_path):
     # a more convenient (and faster) scaling to work with
     cal_data = cal_data * 100
 
-    # calcium decay rate (single neuron, based on 40Hz mesearmunts in Gcamp6f mice)
+    # calcium decay rate (single neuron, based on 40Hz measurments in Gcamp6f mice)
     gamma_40hz = 0.97
 
     # Take cal_data from 0 or 1 to end, stepping in 2 -Amon
@@ -27,11 +32,10 @@ def deconv(data_path):
 
     # search over a range of lambda/smoothing values to find the best one
     all_lambda = [80, 40, 20, 10, 7, 5, 3, 2, 1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.01]
-    # all_lambda = [0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.01]         # Debugging array
+    # all_lambda = [1, 2]
 
     # will be used later to reconstruct the calcium from the deconvoled rates
     Dinv = np.zeros((T, T))
-    insert_vec = 1  # This line is not used
 
     for k in range(0, T):
         for j in range(0, k + 1):
@@ -43,41 +47,33 @@ def deconv(data_path):
     penalty_size_convar = np.zeros((len(all_lambda), rep))
     calcium_dif_convar = np.zeros((len(all_lambda), rep))
 
-    start = time.time()
-    delete_me = []
+
+
     for k in range(0, len(all_lambda)):
         _lambda = all_lambda[k]
-        # r, r1, beta0 = convar.convar_half_torch(odd_traces, gamma, _lambda)
+        r, r1, beta0 = convar.convar_half_torch(odd_traces, gamma, _lambda)
         # calculating the changes in spiking rate in each deconvolve trace
+        r_diff = np.diff(r[1:], axis=0)
+        # calculating the penalty in each trace
+        penalty_size_convar[k] = np.mean(np.square(r_diff), axis=0)
+        # reconstruct the calcium
+        c_odd = np.matmul(Dinv, np.vstack((r1, r)))
+        calcium_dif_convar[k] = np.mean(np.abs(c_odd+beta0-even_traces), axis=0)
         # Done token
+
+    temp = np.mean(calcium_dif_convar, axis=1)
+    min_error_convar = np.min(temp)
+    best_lambda_convar_indx = np.argmin(temp)
+    best_lambda_convar = all_lambda[best_lambda_convar_indx]
+
+    print("Min error Convar:", min_error_convar)
+    print(best_lambda_convar_indx)
+    print("Best Lambda:", best_lambda_convar)
 
 
     # partial_f = partial(convar.convar_half_torch, odd_traces, gamma)
-    # with Pool(2) as p:
+    # with Pool(6) as p:
     #     p.map(partial_f, all_lambda)
 
-
-
-    #     p = Process(target=convar.convar_half_torch, args=(odd_traces, gamma, _lambda))
-    #     # Process(target=convar.convar_np, args=(odd_traces, gamma, _lambda)).start()
-    #     delete_me.append(p)
-    #     p.start()
-    # for d in delete_me:
-    #     d.join()
     end = time.time()
     print(end - start)
-
-    # r, r1, beta0 = convar.convar_half_torch(odd_traces, gamma, all_lambda[0])  # Right now, using numpy to initialize the data and then torch for the big matrix ops is quickest
-    # r, r1, beta1 = convar.convar_torch(odd_traces, gamma, all_lambda[0])
-    # r, r1, beta2 = convar.convar_torch_cuda_direct(odd_traces, gamma, all_lambda[0])
-    # r, r1, beta3 = convar.convar_torch_cuda(odd_traces, gamma, all_lambda[0])
-    r, r1, beta4 = convar.convar_np_openblas(odd_traces, gamma, all_lambda[0])
-    # r, r1, beta5 = convar.convar_np(odd_traces, gamma, all_lambda[0])
-
-    # print("0", beta0)
-    # print("1", beta1)
-    # print("2", beta2)
-    # print("3", beta3)
-    # print("4", beta4)
-    # print("5", beta5)
-    print(beta4.dtype)

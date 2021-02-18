@@ -1,10 +1,81 @@
-from import_library import *
+import numpy as np
+from scipy import linalg
+import torch
+import time
+import gc
 
 #Todo
 # https://pytorch.org/docs/stable/notes/cuda.html#cuda-semantics
 # Create tensors on gpu instead of copying them over
 
 def convar_np(y, gamma, _lambda):
+    """
+    convar is a straight translation from matlab into numpy.
+    Performance is about 2.5x worse than the matlab function.
+    -Amon
+
+    :param y:
+    :param gamma:
+    :param _lambda:
+    :return:
+    """
+    start = time.time()
+    T = np.shape(y)[0]
+    P = np.identity(T) - 1 / T * np.ones((T,T))
+    tildey = np.matmul(P, y)
+
+    # will be used later to reconstruct the calcium from the deconvoled rates
+    Dinv = np.zeros((T, T))
+
+    for k in range(0, T):
+        for j in range(0, k + 1):
+            exp = (k - j)
+            Dinv[k][j] = gamma ** exp
+
+    A = np.matmul(P, Dinv)
+
+    L1 = np.zeros((T, T))
+    for i in range(0, T):
+        for j in range(0, T):
+            if(i >= 2 and j >= 1):
+                if(i == j):
+                    L1[i][j] = 1
+                if(i == j+1):
+                    L1[i][j] = -1
+
+    Z = np.matmul(np.transpose(L1), L1)
+
+    # large step size that ensures converges
+    s = 0.5 * ( (1-gamma)**2 / ( (1-gamma**T)**2 + (1-gamma)**2 * 4 * _lambda ) )
+
+    # deconvolution
+    # initializing
+    # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
+    r = np.ones((200, 50))  # Test line for consistency instead of randomness
+
+    mid = time.time()
+
+    for i in range(0, 10000):
+        Ar = np.matmul(A, r)
+        tmAr = (tildey - Ar)
+        At_tmAr = np.matmul(np.transpose(A), tmAr)
+        Zr = np.matmul(Z, r)
+        x = r + s*At_tmAr - s*_lambda*Zr
+        r = x
+        r[r < 0] = 0
+        r[0] = x[0]
+    r_final = r[1:]
+    r1 = r[0]
+    beta_0 = np.mean(y - np.matmul(Dinv, r), axis=0)
+
+    print("------------------------------------------------------")
+    print("Numpy stats")
+    print("Mid convar time:", mid-start)
+    print("Convar time:", time.time()-start)
+
+    return r_final,r1,beta_0
+
+def convar_np_1line(y, gamma, _lambda):
     """
     convar is a straight translation from matlab into numpy.
     Performance is about 2.5x worse than the matlab function.
@@ -53,22 +124,87 @@ def convar_np(y, gamma, _lambda):
     mid = time.time()
 
     for i in range(0, 10000):
-        Ar = np.matmul(A, r)
-        tmAr = (tildey - Ar)
-        At_tmAr = np.matmul(np.transpose(A), tmAr)
-        Zr = np.matmul(Z, r)
-        x = r + s*At_tmAr - s*_lambda*Zr
+        x = r + s*(np.matmul(np.transpose(A), (tildey - np.matmul(A, r)))) - s*_lambda*(np.matmul(Z, r))
         r = x
         r[r < 0] = 0
         r[0] = x[0]
-
-
     r_final = r[1:]
     r1 = r[0]
     beta_0 = np.mean(y - np.matmul(Dinv, r), axis=0)
 
     print("------------------------------------------------------")
-    print("Numpy stats")
+    print("Numpy 1Line stats")
+    print("Mid convar time:", mid-start)
+    print("Convar time:", time.time()-start)
+
+    return r_final,r1,beta_0
+
+
+def convar_np_F_dot(y, gamma, _lambda):
+    """
+    convar is a straight translation from matlab into numpy.
+    Performance is about 2.5x worse than the matlab function.
+    -Amon
+
+    :param y:
+    :param gamma:
+    :param _lambda:
+    :return:
+    """
+    start = time.time()
+    y = np.copy(y, order="F")
+
+    T = np.shape(y)[0]
+    P = np.identity(T) - 1 / T * np.ones((T,T))
+    P = np.copy(P, order="F")
+    tildey = np.matmul(P, y)
+
+    # will be used later to reconstruct the calcium from the deconvoled rates
+    Dinv = np.zeros((T, T), order="F")
+
+    for k in range(0, T):
+        for j in range(0, k + 1):
+            exp = (k - j)
+            Dinv[k][j] = gamma ** exp
+
+    A = np.dot(P, Dinv)
+
+    L1 = np.zeros((T, T), order="F")
+    for i in range(0, T):
+        for j in range(0, T):
+            if(i >= 2 and j >= 1):
+                if(i == j):
+                    L1[i][j] = 1
+                if(i == j+1):
+                    L1[i][j] = -1
+
+    Z = np.dot(np.transpose(L1), L1)
+
+    # large step size that ensures converges
+    s = 0.5 * ( (1-gamma)**2 / ( (1-gamma**T)**2 + (1-gamma)**2 * 4 * _lambda ) )
+
+    # deconvolution
+    # initializing
+    # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
+    r = np.ones((200, 50), order="F")  # Test line for consistency instead of randomness
+
+    mid = time.time()
+
+    for i in range(0, 10000):
+        Ar = np.dot(A, r)
+        tmAr = (tildey - Ar)
+        At_tmAr = np.dot(np.transpose(A), tmAr)
+        Zr = np.dot(Z, r)
+        x = r + s*At_tmAr - s*_lambda*Zr
+        r = x
+        r[r < 0] = 0
+        r[0] = x[0]
+    r_final = r[1:]
+    r1 = r[0]
+    beta_0 = np.mean(y - np.dot(Dinv, r), axis=0)
+
+    print("------------------------------------------------------")
+    print("Numpy F Dot stats")
     print("Mid convar time:", mid-start)
     print("Convar time:", time.time()-start)
 
@@ -388,6 +524,7 @@ def convar_torch_cuda_direct(y, gamma, _lambda):
 def convar_half_torch(y, gamma, _lambda):
     """
     Using numpy to initialize the matrices, then converting them into pytorch tensors.
+    Returning Numpy arrays at the end.
     -Amon
 
     :param y:
@@ -459,5 +596,5 @@ def convar_half_torch(y, gamma, _lambda):
     print("Mid convar time:", mid-start)
     print("Convar time:", time.time()-start)
 
-    return r_final,r1,beta_0
+    return r_final.numpy(),r1.numpy(),beta_0.numpy()
 
