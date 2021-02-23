@@ -8,5 +8,8 @@
 % 
 % z = [zeros(T,1); 5];
 % z(z==0) = 2;
-test = [1 2 3 4 5 ; 3 3 3 3 3]
-test = test.^2
+
+
+h5disp('data_Jonas.hdf5')
+data = h5read('data_Jonas.hdf5', '/DF_by_FO');
+mean(data)

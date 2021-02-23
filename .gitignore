@@ -2,5 +2,6 @@
 /shelf/
 /workspace.xml
 venv/
+venv37/
 /__pycache__/
 /Orig_Wide-Field-Deconvolution/sandbox_amon.asv
