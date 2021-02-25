@@ -3,6 +3,8 @@ import numpy as np
 import deconv_Dff
 import sys
 import h5py
+from scipy.io import loadmat
+
 
 example_data_path = r"Clancy_etal_fluorescence_example.mat"
 h5_path = r"data_Jonas.hdf5"
@@ -28,10 +30,16 @@ torch.set_default_dtype(torch.float64)
 if __name__ == '__main__':
     mode = 1
     if(mode == 1):
-        # deconv_Dff.deconv_torch_jit(example_data_path)
-        # deconv_Dff.deconv(example_data_path)
-        deconv_Dff.deconv_multicore(example_data_path)
-        # deconv_Dff.deconv_multicore_ray(example_data_path)
+        # Load data
+        # cal_data should be formatted in a way that axis=0 is T while axis=1 is x,y flattened of the input image
+        data_import = loadmat(example_data_path)
+        cal_data = data_import["cal_data"]
+
+
+        # deconv_Dff.deconv_torch_jit(cal_data=cal_data)
+        deconv_Dff.deconv(cal_data=cal_data)
+        # deconv_Dff.deconv_multicore(cal_data=cal_data)
+        # deconv_Dff.deconv_multicore_ray(cal_data=cal_data)
         # np.show_config()
 
     if(mode == 5):
@@ -41,7 +49,9 @@ if __name__ == '__main__':
             a_group_key = list(f.keys())[0]
 
             d = f["ROI"]
-            print(d[2])
+            print(d[81][81])
+            # for x in d:
+            #     print(x)
 
             # Get the data
             # data = list(f[a_group_key])

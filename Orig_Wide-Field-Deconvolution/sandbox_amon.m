@@ -12,4 +12,5 @@
 
 h5disp('data_Jonas.hdf5')
 data = h5read('data_Jonas.hdf5', '/DF_by_FO');
-mean(data)
+x = data(81,81,:);
+% mean(data)

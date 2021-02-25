@@ -51,7 +51,7 @@ def convar_np(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = np.ones((200, 50))  # Test line for consistency instead of randomness
+    r = np.ones((np.shape(y)[0], np.shape(y)[1]))  # Test line for consistency instead of randomness
 
     mid = time.time()
 
@@ -64,6 +64,15 @@ def convar_np(y, gamma, _lambda):
         r = x
         r[r < 0] = 0
         r[0] = x[0]
+
+        # #Early Stoppage
+        # gradient = s * At_tmAr - s * _lambda * Zr
+        # print("-----------------------")
+        # print("Mean:", np.mean(gradient))
+        # print("Max:", np.max(gradient))
+        # print("Min:", np.min(gradient))
+        # print("Sum Max Min:", np.abs(np.max(gradient)) + np.abs(np.min(gradient)))
+
     r_final = r[1:]
     r1 = r[0]
     beta_0 = np.mean(y - np.matmul(Dinv, r), axis=0)

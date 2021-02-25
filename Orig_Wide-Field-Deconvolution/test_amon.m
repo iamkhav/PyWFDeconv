@@ -36,8 +36,8 @@ T = size(odd_traces,1);
 rep = size(cal_data,2);
         
 % serach over a range of lambda/smoothing values to find the best one
-all_lambda = [80 40 20 10 7 5 3 2 1 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1 0.05 0.01];
-% all_lambda = [1 2];
+% all_lambda = [20 10 7 5 3 2 1 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1 0.05];
+all_lambda = [1];
 
 
 % will be used later to reconstruct the calcium from the deconvoled rates
