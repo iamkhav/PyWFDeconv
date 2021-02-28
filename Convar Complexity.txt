@@ -1,0 +1,29 @@
+~~~~~~~ Matrix Dimensions
+N := (x,yflat of input image)
+T := Number of frames
+
+y : TxN		(Input)
+tildey : TxN
+
+A : TxT
+r : TxN
+
+tmAr : TxN
+Z : TxT
+
+
+
+~~~~~~~ Complexities
+Complexity of Mat-Mat-Mul with A * B = C where A : NxM and B : MxL is O(N * M * L)
+
+Ar = A * r		~Calc
+Ar = TxT * TxN		~Calc with sizes
+O(T * T * N)		~Complexity
+
+At_tmAr = A' * tmAr
+At_tmAr = TxT * TxN
+O(T * T * N)
+
+Zr = Z * r
+Zr = TxT * TxN
+O(T * T * N)

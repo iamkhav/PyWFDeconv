@@ -56,6 +56,8 @@ tic
 for k = 1:length(all_lambda)
     lambda = all_lambda(k); 
     [r, r1,beta0] = test_convar_amon(odd_traces,gamma,lambda); 
+%     [r, r1,beta0] = convar_analytic_unconstraint(odd_traces,gamma,lambda); 
+
     % calculating the changes in spiking rate in each deconvolve trace
     r_diff = diff(r(2:end,:));
     % calculating the penalty in each trace   

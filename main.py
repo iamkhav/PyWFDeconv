@@ -4,7 +4,7 @@ import deconv_Dff
 import sys
 import h5py
 from scipy.io import loadmat
-
+import helpers
 
 example_data_path = r"Clancy_etal_fluorescence_example.mat"
 h5_path = r"data_Jonas.hdf5"
@@ -35,24 +35,29 @@ if __name__ == '__main__':
         data_import = loadmat(example_data_path)
         cal_data = data_import["cal_data"]
 
+        # deconv_Dff.deconv_testing(cal_data=cal_data)
 
-        # deconv_Dff.deconv_torch_jit(cal_data=cal_data)
         deconv_Dff.deconv(cal_data=cal_data)
         # deconv_Dff.deconv_multicore(cal_data=cal_data)
-        # deconv_Dff.deconv_multicore_ray(cal_data=cal_data)
+
+
+        # deconv_Dff_experimental.deconv_multicore_ray(cal_data=cal_data)
+        # deconv_Dff_experimental.deconv_torch_jit(cal_data=cal_data)
+
         # np.show_config()
 
     if(mode == 5):
+        # Main function example
+        #
+
+        # Read files
         with h5py.File(h5_path, "r") as f:
             # List all groups
-            print("Keys: %s" % f.keys())
-            a_group_key = list(f.keys())[0]
+            print(f"Keys: {f.keys()}")
 
-            d = f["ROI"]
-            print(d[81][81])
-            # for x in d:
-            #     print(x)
+            # Get data and ROI
+            df_fo = np.array(f["DF_by_FO"])
+            ROI = np.array(f["ROI"])
 
-            # Get the data
-            # data = list(f[a_group_key])
-            # print(data.keys())
+        # Clean the data (if you suspect or know about Inf/NaN regions)
+        cleaned_df_fo = helpers.CleanDFFO(df_fo, ROI=ROI)

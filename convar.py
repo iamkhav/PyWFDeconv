@@ -2,7 +2,7 @@ import numpy as np
 from scipy import linalg
 import torch
 import time
-import gc
+# import gc
 from numba import jit
 
 
@@ -127,7 +127,7 @@ def convar_np_at(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = np.ones((200, 50))  # Test line for consistency instead of randomness
+    r = np.ones((np.shape(y)[0], np.shape(y)[1]))  # Test line for consistency instead of randomness
 
     mid = time.time()
 
@@ -195,7 +195,7 @@ def convar_numba(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = np.ones((200, 50))  # Test line for consistency instead of randomness
+    r = np.ones((np.shape(y)[0], np.shape(y)[1]))  # Test line for consistency instead of randomness
 
 
     for i in range(0, 10000):
@@ -260,7 +260,7 @@ def convar_np_1line(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = np.ones((200, 50))  # Test line for consistency instead of randomness
+    r = np.ones((np.shape(y)[0], np.shape(y)[1]))  # Test line for consistency instead of randomness
 
     mid = time.time()
 
@@ -327,7 +327,7 @@ def convar_np_F_dot(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = np.ones((200, 50), order="F")  # Test line for consistency instead of randomness
+    r = np.ones((np.shape(y)[0], np.shape(y)[1]), order="F")  # Test line for consistency instead of randomness
 
     mid = time.time()
 
@@ -398,7 +398,7 @@ def convar_np_openblas(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = np.ones((200, 50), order="F")  # Test line for consistency instead of randomness
+    r = np.ones((np.shape(y)[0], np.shape(y)[1]), order="F")  # Test line for consistency instead of randomness
 
     mid = time.time()
 
@@ -473,7 +473,7 @@ def convar_torch(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = torch.ones((200, 50))  # Test line for consistency instead of randomness
+    r = torch.ones((y.shape[0], y.shape[1]))  # Test line for consistency instead of randomness
 
     mid = time.time()
     # All code until here is very light
@@ -552,7 +552,7 @@ def convar_torch_cuda(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = (torch.ones((200, 50))).to(device)  # Test line for consistency instead of randomness
+    r = (torch.ones((y.shape[0], y.shape[1]))).to(device)  # Test line for consistency instead of randomness
 
     mid = time.time()
     # All code until here is very light
@@ -632,8 +632,8 @@ def convar_torch_cuda_direct(y, gamma, _lambda):
 
     # deconvolution
     # initializing
-    # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = torch.empty((200, 50), device=device)
+    # r = np.random.rand(y.shape[0], y.shape[1])
+    r = torch.empty((y.shape[0], y.shape[1]), device=device)
     r = torch.ones_like(r)  # Test line for consistency instead of randomness
 
     mid = time.time()
@@ -705,7 +705,7 @@ def convar_half_torch(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = np.ones((200, 50))  # Test line for consistency instead of randomness
+    r = np.ones((np.shape(y)[0], np.shape(y)[1]))  # Test line for consistency instead of randomness
 
     mid = time.time()
 
@@ -783,7 +783,7 @@ def convar_half_torch_jit(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = np.ones((200, 50))  # Test line for consistency instead of randomness
+    r = np.ones((np.shape(y)[0], np.shape(y)[1]))  # Test line for consistency instead of randomness
 
 
     # Torch allocation
@@ -857,7 +857,7 @@ def convar_torch_jit(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = torch.ones((200, 50))  # Test line for consistency instead of randomness
+    r = torch.ones((y.shape[0], y.shape[1]))  # Test line for consistency instead of randomness
 
     # All code until here is very light
 
