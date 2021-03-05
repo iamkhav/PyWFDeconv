@@ -1,9 +1,10 @@
 import numpy as np
-from torch.multiprocessing import Process, Pool
+from torch.multiprocessing import Pool
 """from ray.util.multiprocessing import Pool as RayPool
 import ray"""
 # import torch.multiprocessing as TorchMP
 import convar
+import firdif
 import time
 # import torch
 from functools import partial
@@ -17,7 +18,7 @@ def deconv_testing(cal_data, ROI=None):
     :param ROI:
     :return:
     """
-    start = time.time()
+    # start = time.time()
 
     # a more convenient (and faster) scaling to work with
     cal_data = cal_data * 100
@@ -25,14 +26,32 @@ def deconv_testing(cal_data, ROI=None):
     # calcium decay rate (single neuron, based on 40Hz measurments in Gcamp6f mice)
     gamma_40hz = 0.97
 
-    # benches with openblas
+    # Benches
+    # Openblas
     # test_traces = np.random.rand(800,200)             # 50s @ 52%
     # test_traces = np.random.rand(800,100)             # 30s @ 51%
 
-    # test_traces = np.random.rand(200,800)             # 26s @ 40%
-    test_traces = np.random.rand(100,800)             # 12s @ 36%           # Slicing and multiple convar execs seem to be the best way
-    # test_traces = np.random.rand(100,3200)              # 75s @ 35%
     # test_traces = np.random.rand(400,800)               # 85s @ 40%
+    # test_traces = np.random.rand(200,800)             # 26s @ 40%
+    # test_traces = np.random.rand(100,800)             # 12s @ 36%           # Slicing and multiple convar execs seem to be the best way
+    # test_traces = np.random.rand(50,800)                # 6.5s @ 22%
+    test_traces = np.random.rand(25,800)                # 4s @ 16%
+
+    # test_traces = np.random.rand(100,3200)              # 75s @ 35%
+    # test_traces = np.random.rand(4500,1)               # 1071s full convar        || 7s Mid convar
+
+
+    # Cuda
+    # test_traces = np.random.rand(500,500)               # 59s
+    # test_traces = np.random.rand(400,800)               # 62s
+    # test_traces = np.random.rand(100,3200)               # 21s
+    # test_traces = np.random.rand(200,3200)               # 65s
+
+
+    # Cuda direct
+    # test_traces = np.random.rand(200,3200)               # 65s
+    # test_traces = np.random.rand(4500,5)               # 402s full convar        || Mid convar 181s
+    # test_traces = np.random.rand(4500,1)               #  198s full convar        || Mid convar 177s
 
 
     # test_traces = np.random.rand(50,200)
@@ -89,8 +108,8 @@ def deconv_testing(cal_data, ROI=None):
 
 
 
-    end = time.time()
-    print(end - start)
+    # end = time.time()
+    # print(end - start)
 
 
 
@@ -139,7 +158,8 @@ def deconv(cal_data, ROI=None):
     for k in range(0, len(all_lambda)):
         _lambda = all_lambda[k]
 
-        r, r1, beta0 = convar.convar_np(odd_traces, gamma, _lambda)
+        # r, r1, beta0 = convar.convar_np(odd_traces, gamma, _lambda)
+        r, r1, beta0 = firdif.firdif_np(odd_traces, gamma, _lambda)
         # calculating the changes in spiking rate in each deconvolve trace
         r_diff = np.diff(r[1:], axis=0)
         # calculating the penalty in each trace
@@ -147,12 +167,14 @@ def deconv(cal_data, ROI=None):
         # reconstruct the calcium
         c_odd = np.matmul(Dinv, np.vstack((r1, r)))
         calcium_dif_convar[k] = np.mean(np.abs(c_odd+beta0-even_traces), axis=0)
-
+    # print(r)
     temp = np.mean(calcium_dif_convar, axis=1)
     min_error_convar = np.min(temp)
     best_lambda_convar_indx = np.argmin(temp)
     best_lambda_convar = all_lambda[best_lambda_convar_indx]
 
+    print("------------------------------------------------------")
+    print("------------------------------------------------------")
     print("Min error Convar:", min_error_convar)
     print("Best Lambda:", best_lambda_convar)
 
@@ -162,7 +184,6 @@ def deconv(cal_data, ROI=None):
 
 
 def deconv_multicore(cal_data, ROI=None):
-    start = time.time()
 
     # a more convenient (and faster) scaling to work with
     cal_data = cal_data * 100
@@ -199,13 +220,15 @@ def deconv_multicore(cal_data, ROI=None):
     penalty_size_convar = np.zeros((len(all_lambda), rep))
     calcium_dif_convar = np.zeros((len(all_lambda), rep))
 
-
+    start = time.time()
     results = []
     # partial_f = partial(convar.convar_half_torch, odd_traces, gamma)
     partial_f = partial(convar.convar_np_openblas, odd_traces, gamma)
     with Pool(8) as p:
         results = p.map(partial_f, all_lambda)
 
+    end = time.time()
+    print("All Convars time:", end - start)
 
     c = 0
     for k in results:
@@ -225,10 +248,10 @@ def deconv_multicore(cal_data, ROI=None):
     best_lambda_convar_indx = np.argmin(temp)
     best_lambda_convar = all_lambda[best_lambda_convar_indx]
 
+    print("------------------------------------------------------")
+    print("------------------------------------------------------")
     print("Min error Convar:", min_error_convar)
     print("Best Lambda:", best_lambda_convar)
 
-    end = time.time()
-    print(end - start)
 
 

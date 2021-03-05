@@ -55,17 +55,8 @@ calcium_dif_convar = zeros(length(all_lambda),rep);
 tic
 for k = 1:length(all_lambda)
     lambda = all_lambda(k); 
-    [r, r1,beta0] = test_convar_amon(odd_traces,gamma,lambda); 
-%     [r, r1,beta0] = convar_analytic_unconstraint(odd_traces,gamma,lambda); 
-
-    % calculating the changes in spiking rate in each deconvolve trace
-    r_diff = diff(r(2:end,:));
-    % calculating the penalty in each trace   
-    penalty_size_convar(k,:) = mean(r_diff.^2);
-    % reconstruct the calcium
-    c_odd = Dinv*[r1; r];
-    calcium_dif_convar(k,:) = mean(abs(c_odd+beta0-even_traces));
+%     [test] = test_firdif_amon(odd_traces,gamma,lambda); 
+    [r, r1,beta0] = convar_analytic_unconstraint(odd_traces,gamma,lambda); 
 end
-[min_error_convar,best_lambda_convar_indx] = min(mean(calcium_dif_convar,2));
-best_lambda_convar = all_lambda(best_lambda_convar_indx);
+
 toc

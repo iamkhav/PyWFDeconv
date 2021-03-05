@@ -3,7 +3,7 @@ from scipy import linalg
 import torch
 import time
 # import gc
-from numba import jit
+import helpers
 
 
 
@@ -60,18 +60,26 @@ def convar_np(y, gamma, _lambda):
         tmAr = (tildey - Ar)
         At_tmAr = np.matmul(np.transpose(A), tmAr)
         Zr = np.matmul(Z, r)
-        x = r + s*At_tmAr - s*_lambda*Zr
+        gradient = s * At_tmAr - s * _lambda * Zr           # For Early Stop
+        x = r + gradient
         r = x
         r[r < 0] = 0
         r[0] = x[0]
 
-        # #Early Stoppage
-        # gradient = s * At_tmAr - s * _lambda * Zr
+        # #Early Stop
+        # Mean
         # print("-----------------------")
-        # print("Mean:", np.mean(gradient))
-        # print("Max:", np.max(gradient))
-        # print("Min:", np.min(gradient))
-        # print("Sum Max Min:", np.abs(np.max(gradient)) + np.abs(np.min(gradient)))
+        # print("Mean:", np.abs(np.mean(gradient)))
+        # temp = np.abs(np.mean(gradient))
+        # if(np.abs(np.mean(gradient)) < 0.00001):
+        #     print(f"Early Stop at {i} iterations")
+        #     break
+        # Biggest Pos+Neg || BAD PERFORMANCE
+        # temp = helpers.biggest_pos_neg_sum(gradient)
+        # print("PosNegSum:", temp)
+        # if(temp < 0.003):
+        #     print(f"Early Stop at {i} iterations")
+        #     break
 
     r_final = r[1:]
     r1 = r[0]
@@ -151,70 +159,6 @@ def convar_np_at(y, gamma, _lambda):
 
     return r_final,r1,beta_0
 
-
-@jit(nopython=True)
-def convar_numba(y, gamma, _lambda):
-    """
-    Don't use this function.
-    It doesn't return correct values due to having certain numpy functions not supported by numba.
-    -Amon
-
-    :param y:
-    :param gamma:
-    :param _lambda:
-    :return:
-    """
-    T = np.shape(y)[0]
-    P = np.identity(T) - 1 / T * np.ones((T,T))
-    tildey = P @ y
-
-    # will be used later to reconstruct the calcium from the deconvoled rates
-    Dinv = np.zeros((T, T))
-
-    for k in range(0, T):
-        for j in range(0, k + 1):
-            exp = (k - j)
-            Dinv[k][j] = gamma ** exp
-
-    A = P @ Dinv
-
-    L1 = np.zeros((T, T))
-    for i in range(0, T):
-        for j in range(0, T):
-            if(i >= 2 and j >= 1):
-                if(i == j):
-                    L1[i][j] = 1
-                if(i == j+1):
-                    L1[i][j] = -1
-
-    Z = np.transpose(L1) @ L1
-
-    # large step size that ensures converges
-    s = 0.5 * ( (1-gamma)**2 / ( (1-gamma**T)**2 + (1-gamma)**2 * 4 * _lambda ) )
-
-    # deconvolution
-    # initializing
-    # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = np.ones((np.shape(y)[0], np.shape(y)[1]))  # Test line for consistency instead of randomness
-
-
-    for i in range(0, 10000):
-        Ar = A @ r
-        tmAr = (tildey - Ar)
-        At_tmAr = np.transpose(A) @ tmAr
-        Zr = Z @ r
-        x = r + s*At_tmAr - s*_lambda*Zr
-        r = x
-        # r[r < 0] = 0
-        r[0] = x[0]
-    r_final = r[1:]
-    r1 = r[0]
-    beta_0 = np.mean(y - Dinv @ r)
-
-    print("------------------------------------------------------")
-    print("Numpy stats")
-
-    return r_final,r1,beta_0
 
 def convar_np_1line(y, gamma, _lambda):
     """
@@ -739,80 +683,6 @@ def convar_half_torch(y, gamma, _lambda):
     return r_final.numpy(),r1.numpy(),beta_0.numpy()
 
 
-# @torch.jit.script
-def convar_half_torch_jit(y, gamma, _lambda):
-    """
-    Using numpy to initialize the matrices, then converting them into pytorch tensors.
-    Returning Numpy arrays at the end.
-    -Amon
-
-    :param y:
-    :param gamma:
-    :param _lambda:
-    :return:
-    """
-
-    T = np.shape(y)[0]
-    P = np.identity(T) - 1 / T * np.ones((T,T))
-    tildey = np.matmul(P, y)
-
-    # will be used later to reconstruct the calcium from the deconvoled rates
-    Dinv = np.zeros((T, T))
-
-    for k in range(0, T):
-        for j in range(0, k + 1):
-            exp = (k - j)
-            Dinv[k][j] = gamma ** exp
-
-    A = np.matmul(P, Dinv)
-
-    L1 = np.zeros((T, T))
-    for i in range(0, T):
-        for j in range(0, T):
-            if(i >= 2 and j >= 1):
-                if(i == j):
-                    L1[i][j] = 1
-                if(i == j+1):
-                    L1[i][j] = -1
-
-    Z = np.matmul(np.transpose(L1), L1)
-
-    # large step size that ensures converges
-    s = 0.5 * ( (1-gamma)**2 / ( (1-gamma**T)**2 + (1-gamma)**2 * 4 * _lambda ) )
-
-    # deconvolution
-    # initializing
-    # r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    r = np.ones((np.shape(y)[0], np.shape(y)[1]))  # Test line for consistency instead of randomness
-
-
-    # Torch allocation
-    A = torch.from_numpy(A)
-    r = torch.from_numpy(r)
-    tildey = torch.from_numpy(tildey)
-    Z = torch.from_numpy(Z)
-    Dinv = torch.from_numpy(Dinv)
-    y = torch.from_numpy(y)
-
-    for i in range(0, 10000):
-        Ar = torch.matmul(A, r)
-        tmAr = (tildey - Ar)
-        At_tmAr = torch.matmul(torch.transpose(A, 0, 1), tmAr)
-        Zr = torch.matmul(Z, r)
-        x = r + s * At_tmAr - s * _lambda * Zr
-        r = x
-        r[r < 0] = 0
-        r[0] = x[0]
-
-    r_final = r[1:]
-    r1 = r[0]
-    beta_0 = torch.mean(y - torch.matmul(Dinv, r), dim=0)
-
-    print("------------------------------------------------------")
-    print("Half Torch stats")
-
-
-    return r_final.numpy(),r1.numpy(),beta_0.numpy()
 
 @torch.jit.script
 def convar_torch_jit(y, gamma, _lambda):

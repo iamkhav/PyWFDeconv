@@ -1,6 +1,5 @@
 import numpy as np
-from numba import jit
-import time
+# from numba import jit
 
 
 def CleanDFFO(data, ROI=None):
@@ -62,3 +61,30 @@ def first_in_2dmat(input, searchvalue):
                 return (i,j)
 
     return None
+
+
+def biggest_pos_neg_sum(in_array):
+    """
+    Find biggest positive and biggest |negative|.
+    If no negative values, 0 is returned.
+
+    Using this as a metric for Early Stop.
+
+    :param in_array: Some numpy array.
+    :return: Biggest Pos, Biggest |Neg|
+    """
+    curr_bigpos = 0
+    curr_bigneg = 0
+    for x in np.ravel(in_array):
+        # if(x > 0 and x > curr_bigpos):
+        #     curr_bigpos = x
+        # if(x < 0 and x < curr_bigneg):
+        #     curr_bigneg = x
+        if(x > 0):
+            if(x > curr_bigpos):
+                curr_bigpos = x
+        else:
+            if(x < curr_bigneg):
+                curr_bigneg = x
+
+    return curr_bigpos + np.abs(curr_bigneg)

@@ -29,6 +29,7 @@ torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
     mode = 1
+
     if(mode == 1):
         # Load data
         # cal_data should be formatted in a way that axis=0 is T while axis=1 is x,y flattened of the input image
@@ -36,15 +37,12 @@ if __name__ == '__main__':
         cal_data = data_import["cal_data"]
 
         # deconv_Dff.deconv_testing(cal_data=cal_data)
-
         deconv_Dff.deconv(cal_data=cal_data)
         # deconv_Dff.deconv_multicore(cal_data=cal_data)
-
 
         # deconv_Dff_experimental.deconv_multicore_ray(cal_data=cal_data)
         # deconv_Dff_experimental.deconv_torch_jit(cal_data=cal_data)
 
-        # np.show_config()
 
     if(mode == 5):
         # Main function example
@@ -61,3 +59,14 @@ if __name__ == '__main__':
 
         # Clean the data (if you suspect or know about Inf/NaN regions)
         cleaned_df_fo = helpers.CleanDFFO(df_fo, ROI=ROI)
+
+
+    if(mode == 6):
+        #Testing
+        # testi = np.array([[1,2,3], [4, -2, 3.5], [-10, -12, 23.2]])
+        testi = np.array([2,3,4])
+        big_small_sum = helpers.biggest_pos_neg_sum(testi)
+
+
+
+    # np.show_config()

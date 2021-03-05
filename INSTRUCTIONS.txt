@@ -1,0 +1,6 @@
+~~ Installation
+
+
+~~ Notes
+If you want to use experimental features, you have to downgrade to Python 3.7.
+Numba doesn't support newer Python Version atm (Mar 2021).
