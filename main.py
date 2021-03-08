@@ -36,8 +36,8 @@ if __name__ == '__main__':
         data_import = loadmat(example_data_path)
         cal_data = data_import["cal_data"]
 
-        # deconv_Dff.deconv_testing(cal_data=cal_data)
-        deconv_Dff.deconv(cal_data=cal_data)
+        deconv_Dff.deconv_testing(cal_data=cal_data)
+        # deconv_Dff.deconv(cal_data=cal_data)
         # deconv_Dff.deconv_multicore(cal_data=cal_data)
 
         # deconv_Dff_experimental.deconv_multicore_ray(cal_data=cal_data)

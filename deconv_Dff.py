@@ -35,7 +35,7 @@ def deconv_testing(cal_data, ROI=None):
     # test_traces = np.random.rand(200,800)             # 26s @ 40%
     # test_traces = np.random.rand(100,800)             # 12s @ 36%           # Slicing and multiple convar execs seem to be the best way
     # test_traces = np.random.rand(50,800)                # 6.5s @ 22%
-    test_traces = np.random.rand(25,800)                # 4s @ 16%
+    # test_traces = np.random.rand(25,800)                # 4s @ 16%
 
     # test_traces = np.random.rand(100,3200)              # 75s @ 35%
     # test_traces = np.random.rand(4500,1)               # 1071s full convar        || 7s Mid convar
@@ -45,13 +45,16 @@ def deconv_testing(cal_data, ROI=None):
     # test_traces = np.random.rand(500,500)               # 59s
     # test_traces = np.random.rand(400,800)               # 62s
     # test_traces = np.random.rand(100,3200)               # 21s
-    # test_traces = np.random.rand(200,3200)               # 65s
+    # test_traces = np.random.rand(1024,1024)               # 1.3s Mark       || 9.3s Mid     || 320s Convar
+    # test_traces = np.random.rand(200,3200)               # 1.3s Mark || 1.8s Mid || 65s Convar
 
 
     # Cuda direct
     # test_traces = np.random.rand(200,3200)               # 65s
     # test_traces = np.random.rand(4500,5)               # 402s full convar        || Mid convar 181s
     # test_traces = np.random.rand(4500,1)               #  198s full convar        || Mid convar 177s
+    test_traces = np.random.rand(25,800)                #
+
 
 
     # test_traces = np.random.rand(50,200)
@@ -94,18 +97,8 @@ def deconv_testing(cal_data, ROI=None):
     for k in range(0, len(all_lambda)):
         _lambda = all_lambda[k]
 
-        r, r1, beta0 = convar.convar_np_openblas(test_traces, gamma, _lambda)
-
-
-        # Leaving this part to see if I/O sizes differ
-
-        # calculating the changes in spiking rate in each deconvolve trace
-        r_diff = np.diff(r[1:], axis=0)
-        # calculating the penalty in each trace
-        penalty_size_convar[k] = np.mean(np.square(r_diff), axis=0)
-        # reconstruct the calcium
-        c_odd = np.matmul(Dinv, np.vstack((r1, r)))
-
+        r, r1, beta0 = convar.convar_torch_cuda_direct(test_traces, gamma, _lambda)
+        r, r1, beta0 = convar.convar_torch_cuda(test_traces, gamma, _lambda)
 
 
     # end = time.time()

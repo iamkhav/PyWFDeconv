@@ -2,6 +2,7 @@ import numpy as np
 from scipy import linalg
 import torch
 import time
+import cupy as cp
 # import gc
 import helpers
 
@@ -459,8 +460,14 @@ def convar_torch_cuda(y, gamma, _lambda):
     if(device.type != "cuda"):
         print("CUDA not available")
         raise Exception("NO CUDA")
-    y = torch.from_numpy(y).to(device)
+
     start = time.time()
+    # y = y.astype(np.float32)
+    print(y.dtype)
+    y = torch.from_numpy(y).to(device)
+    print(y.dtype)
+
+    print("Mark time:", time.time() - start)
 
 
     T = y.shape[0]
@@ -539,18 +546,23 @@ def convar_torch_cuda_direct(y, gamma, _lambda):
     if(device.type != "cuda"):
         print("CUDA not available")
         raise Exception("NO CUDA")
-    y = torch.from_numpy(y).to(device)
+
     start = time.time()
+    # y = y.astype(np.float32)
+    print(y.dtype)
+    y = torch.from_numpy(y).to(device)
+    print(y.dtype)
+
+    print("Mark time:", time.time() - start)
 
 
     T = y.shape[0]
-    P = torch.eye(T) - 1 / T * torch.ones((T, T))
-    P = P.to(device)
+    P = torch.eye(T, device=device) - 1 / T * torch.ones((T, T), device=device)
     tildey = torch.matmul(P, y)
 
     # will be used later to reconstruct the calcium from the deconvoled rates
-    Dinv = torch.empty((T,T), device=device)
-    Dinv = torch.zeros_like(Dinv)
+    Dinv = torch.zeros((T, T), device=device)
+
 
     for k in range(0, T):
         for j in range(0, k + 1):
@@ -559,8 +571,7 @@ def convar_torch_cuda_direct(y, gamma, _lambda):
 
     A = torch.matmul(P, Dinv)
 
-    L1 = torch.empty((T,T), device=device)
-    L1 = torch.zeros_like(L1)
+    L1 = torch.zeros((T, T), device=device)
     for i in range(0, T):
         for j in range(0, T):
             if (i >= 2 and j >= 1):
@@ -577,8 +588,7 @@ def convar_torch_cuda_direct(y, gamma, _lambda):
     # deconvolution
     # initializing
     # r = np.random.rand(y.shape[0], y.shape[1])
-    r = torch.empty((y.shape[0], y.shape[1]), device=device)
-    r = torch.ones_like(r)  # Test line for consistency instead of randomness
+    r = torch.ones((y.shape[0], y.shape[1]), device=device)  # Test line for consistency instead of randomness
 
     mid = time.time()
     # All code until here is very light
