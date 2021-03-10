@@ -10,8 +10,12 @@
 % z(z==0) = 2;
 
 
-h5disp('data_Jonas.hdf5')
-data = h5read('data_Jonas.hdf5', '/DF_by_FO');
-ROI = h5read('data_Jonas.hdf5', '/ROI');
+% h5disp('data_Jonas.hdf5')
+% data = h5read('data_Jonas.hdf5', '/DF_by_FO');
+% ROI = h5read('data_Jonas.hdf5', '/ROI');
 
 % mean(data)
+
+testo = [1,8,3,17,8,6,7];
+
+t = smooth(testo, 3);

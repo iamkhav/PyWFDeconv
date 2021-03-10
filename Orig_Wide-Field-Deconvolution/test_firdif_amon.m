@@ -1,4 +1,4 @@
-function [r_final,r1,beta0] = firdif(y,gamma,smt)
+function [r_final,r1,beta0] = test_firdif_amon(y,gamma,smt)
 % This function implements the first diffrences method
 % Inputs:  y - row vector, the measured fluorescence trace; 
 % if y is a matrix each row in the matrix is treated as a fluorescence trace

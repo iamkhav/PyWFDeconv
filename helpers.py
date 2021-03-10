@@ -1,5 +1,7 @@
 import numpy as np
 # from numba import jit
+from scipy.ndimage.filters import uniform_filter1d
+
 
 
 def CleanDFFO(data, ROI=None):
@@ -88,3 +90,13 @@ def biggest_pos_neg_sum(in_array):
                 curr_bigneg = x
 
     return curr_bigpos + np.abs(curr_bigneg)
+
+def moving_average(inny, span):
+    """
+    Should be an exact copy of the matlab smooth function when used with "moving" setting (which is default).
+    :return: The smoother array
+    """
+    outy = uniform_filter1d(inny, span)
+    outy[0] = inny[0]
+    outy[-1] = inny[-1]
+    return outy

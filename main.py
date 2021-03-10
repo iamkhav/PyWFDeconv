@@ -4,6 +4,7 @@ import deconv_Dff
 import sys
 import h5py
 from scipy.io import loadmat
+from scipy.ndimage.filters import uniform_filter1d
 import helpers
 
 example_data_path = r"Clancy_etal_fluorescence_example.mat"
@@ -28,7 +29,7 @@ torch.set_printoptions(threshold=sys.maxsize, precision=10)
 torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
-    mode = 1
+    mode = 6
 
     if(mode == 1):
         # Load data
@@ -64,9 +65,11 @@ if __name__ == '__main__':
     if(mode == 6):
         #Testing
         # testi = np.array([[1,2,3], [4, -2, 3.5], [-10, -12, 23.2]])
-        testi = np.array([2,3,4])
-        big_small_sum = helpers.biggest_pos_neg_sum(testi)
+        # testi = np.array([2,3,4])
+        # big_small_sum = helpers.biggest_pos_neg_sum(testi)
 
-
-
+        testo = np.array([1,8,3,17,8,6,7], dtype=np.float32)
+        print(helpers.moving_average(testo,3))
+        # print(testo.dtype)
+        # print(uniform_filter1d(testo, 3))
     # np.show_config()
