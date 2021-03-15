@@ -12,7 +12,7 @@ import early_stops
 
 
 
-def convar_np(y, gamma, _lambda, init_out_matrix = "firdif", earlyStop_f = early_stops.mean_threshold, earlyStop_thresh = 0.00001):
+def convar_np(y, gamma, _lambda, init_out_matrix = "firdif", earlyStop_f = early_stops.mean_threshold):
     """
     convar is a straight translation from matlab into numpy with some additional features.
     -Amon
@@ -81,7 +81,7 @@ def convar_np(y, gamma, _lambda, init_out_matrix = "firdif", earlyStop_f = early
         r[0] = x[0]
 
         #Early Stop -Amon
-        if(earlyStop_f(gradient, earlyStop_thresh)):
+        if(earlyStop_f(gradient)):
             print(f"Early Stop at {i} iterations")
             break
 

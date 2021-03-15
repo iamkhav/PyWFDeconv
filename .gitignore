@@ -1,7 +1,6 @@
 # Default ignored files
 /shelf/
 workspace.xml
-**/*.iml
 misc.xml
 venv/
 venv37/
