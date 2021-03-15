@@ -1,4 +1,4 @@
-function [r_final,r1,beta0] = test_firdif_amon(y,gamma,smt)
+function [r_final] = test_firdif_amon(y,gamma,smt)
 % This function implements the first diffrences method
 % Inputs:  y - row vector, the measured fluorescence trace; 
 % if y is a matrix each row in the matrix is treated as a fluorescence trace
@@ -21,14 +21,15 @@ for i = 1:size(y,2)
     r_smoothed(:,i) = smooth(r_long(:,i),smt,'moving');
 end
 r2toT = r_smoothed(floor(smt/2)+1:end-floor(smt/2),:);
+
 % shifting r to be non negative (for r(2)... r(T))
 % while keeping the whole rate trace (for the inference beta)
 r_shifted = [r(1,:); r2toT];
-%for i = 1:size(y,2)
-%    if min(r2toT(:,i))<0
-%        r_shifted(:,i) = r_shifted(:,i) - min(r2toT(:,i));
-%    end
-%end
+for i = 1:size(y,2)
+   if min(r2toT(:,i))<0
+       r_shifted(:,i) = r_shifted(:,i) - min(r2toT(:,i));
+   end
+end
 r_final = r_shifted(2:end,:);
 r1 = r_shifted(1,:); 
 

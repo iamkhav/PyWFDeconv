@@ -6,9 +6,13 @@ import h5py
 from scipy.io import loadmat
 from scipy.ndimage.filters import uniform_filter1d
 import helpers
+import helpers_pythran
+import timeit
+import time
 
 example_data_path = r"Clancy_etal_fluorescence_example.mat"
 h5_path = r"data_Jonas.hdf5"
+npz_path = r"F0205_tseries_38_DF_by_F0_351_50_cut200_600_compressed.npz"
 
 """
 This is a straight (as straight as possible) translation from the matlab code included in the following paper:
@@ -18,7 +22,6 @@ Todo
 """
 
 #Todo
-# Maybe everything else should also have a Pytorch version.. ?? Numpy CPU is very slow, slower than matlab on some Calcs
 # Warum sind die Values von beta0 nach 4. Nachkommastelle verschieden bei OPENBLAS scipy???
 
 # To see full arrays
@@ -29,7 +32,8 @@ torch.set_printoptions(threshold=sys.maxsize, precision=10)
 torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
-    mode = 6
+    mode = 1
+    print("Launching program..")
 
     if(mode == 1):
         # Load data
@@ -37,12 +41,17 @@ if __name__ == '__main__':
         data_import = loadmat(example_data_path)
         cal_data = data_import["cal_data"]
 
-        deconv_Dff.deconv_testing(cal_data=cal_data)
-        # deconv_Dff.deconv(cal_data=cal_data)
+        deconv_Dff.deconv(cal_data=cal_data)
         # deconv_Dff.deconv_multicore(cal_data=cal_data)
 
         # deconv_Dff_experimental.deconv_multicore_ray(cal_data=cal_data)
         # deconv_Dff_experimental.deconv_torch_jit(cal_data=cal_data)
+
+    if(mode == 2):
+        data_import = loadmat(example_data_path)
+        cal_data = data_import["cal_data"]
+
+        deconv_Dff.deconv_testing(cal_data=cal_data)
 
 
     if(mode == 5):
@@ -68,8 +77,26 @@ if __name__ == '__main__':
         # testi = np.array([2,3,4])
         # big_small_sum = helpers.biggest_pos_neg_sum(testi)
 
+        # testo = np.random.rand(1000000).astype(np.float32)
+        # t = timeit.Timer(lambda: helpers.moving_average(testo,3)).repeat(3, 100)
+        # print(t)
+        # print(testo.dtype)
+        # t = timeit.Timer(lambda: helpers_pythran.moving_average(testo,3)).repeat(3, 100)
+        # print(t)
+
+
         testo = np.array([1,8,3,17,8,6,7], dtype=np.float32)
         print(helpers.moving_average(testo,3))
+        # print(helpers_pythran.moving_average(testo,3))
         # print(testo.dtype)
         # print(uniform_filter1d(testo, 3))
+
+        # Jonas hat ~ 3h gebraucht hierfür auf dem Minnesota Cluster
+        # npz_file = np.load(npz_path)
+        #
+        # print(np.shape(npz_file))
+        # print(npz_file.files)
+        # print(np.shape(npz_file["data"]))
+
+
     # np.show_config()

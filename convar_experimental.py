@@ -64,7 +64,7 @@ def convar_numba(y, gamma, _lambda):
         # r[r < 0] = 0
         r[0] = x[0]
     r_final = r[1:]
-    r1 = r[0]
+    r1 = r[0:1]
     beta_0 = np.mean(y - Dinv @ r)
 
     print("------------------------------------------------------")

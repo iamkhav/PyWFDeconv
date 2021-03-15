@@ -55,9 +55,9 @@ calcium_dif_convar = zeros(length(all_lambda),rep);
 tic
 for k = 1:length(all_lambda)
     lambda = all_lambda(k); 
-    [r_firdif] = test_firdif_amon(odd_traces,gamma,lambda); 
-    [r_unconstr, r1,beta0] = convar_analytic_unconstraint(odd_traces,gamma,lambda); 
-    [r, r1,beta0] = convar(odd_traces,gamma,lambda); 
+    [r_firdif] = test_firdif_amon(odd_traces,gamma,3); 
+%     [r_unconstr, r1,beta0] = convar_analytic_unconstraint(odd_traces,gamma,lambda); 
+%     [r, r1,beta0] = convar(odd_traces,gamma,lambda); 
 
 end
 
