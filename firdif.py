@@ -19,7 +19,7 @@ Original Docstring:
 """
 
 
-def firdif_np(y, gamma, smt, shift_to_allPos_bool=True, need_beta0_bool=False):
+def firdif_np(y, gamma, smt, shift_to_allPos_bool=True, need_beta0_bool=False, printers=False):
     """
 
 
@@ -73,9 +73,10 @@ def firdif_np(y, gamma, smt, shift_to_allPos_bool=True, need_beta0_bool=False):
 
     if(not need_beta0_bool):
         # To save some time if beta0 is not needed
-        print("------------------------------------------------------")
-        print("Firdif stats")
-        print("Time:", time.time() - start)
+        if(printers):
+            print("------------------------------------------------------")
+            print("Firdif stats")
+            print("Time:", time.time() - start)
         return r_final, r1, 0
 
     Dinv = np.zeros((T, T))
@@ -87,7 +88,8 @@ def firdif_np(y, gamma, smt, shift_to_allPos_bool=True, need_beta0_bool=False):
 
     beta0 = np.mean(y - np.matmul(Dinv, r_shifted), axis=0)
 
-    print("------------------------------------------------------")
-    print("Firdif stats")
-    print("Time:", time.time() - start)
+    if(printers):
+        print("------------------------------------------------------")
+        print("Firdif stats")
+        print("Time:", time.time() - start)
     return r_final, r1, beta0

@@ -10,9 +10,7 @@ import early_stops
 # import helpers
 
 
-
-
-def convar_np(y, gamma, _lambda, init_out_matrix = "firdif", earlyStop_f = early_stops.mean_threshold):
+def convar_np(y, gamma, _lambda, init_out_matrix_method = "firdif", earlyStop_bool=True, earlyStop_f=early_stops.mean_threshold, output_mat=None):
     """
     convar is a straight translation from matlab into numpy with some additional features.
     -Amon
@@ -53,17 +51,19 @@ def convar_np(y, gamma, _lambda, init_out_matrix = "firdif", earlyStop_f = early
 
     # deconvolution
     # Initializing output matrix -Amon
-    if(init_out_matrix == "rand"):
+    if(init_out_matrix_method == "rand"):
         r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
-    elif (init_out_matrix == "ones"):
+    elif(init_out_matrix_method == "ones"):
         r = np.ones((np.shape(y)[0], np.shape(y)[1]))
-    elif (init_out_matrix == "zeros"):
+    elif(init_out_matrix_method == "zeros"):
         r = np.zeros((np.shape(y)[0], np.shape(y)[1]))
-    elif (init_out_matrix == "point5"):
+    elif(init_out_matrix_method == "point5"):
         r = np.zeros((np.shape(y)[0], np.shape(y)[1])) + 0.5
-    elif (init_out_matrix == "firdif"):
+    elif(init_out_matrix_method == "firdif"):
         r_a, r_b, _ = firdif.firdif_np(y, gamma, 3)
         r = np.concatenate((r_b, r_a))
+    elif(init_out_matrix_method == "input"):
+        r = output_mat
     else:
         raise Exception("init_out_matrix Argument not set correctly")
 
@@ -81,7 +81,7 @@ def convar_np(y, gamma, _lambda, init_out_matrix = "firdif", earlyStop_f = early
         r[0] = x[0]
 
         #Early Stop -Amon
-        if(earlyStop_f(gradient)):
+        if(earlyStop_bool and earlyStop_f(gradient)):
             print(f"Early Stop at {i} iterations")
             break
 

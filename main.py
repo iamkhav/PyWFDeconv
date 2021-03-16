@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 import deconv_Dff
+import firdif
+import convar
 import sys
 import h5py
 from scipy.io import loadmat
@@ -32,7 +34,7 @@ torch.set_printoptions(threshold=sys.maxsize, precision=10)
 torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
-    mode = 1
+    mode = 6
     print("Launching program..")
 
     if(mode == 1):
@@ -85,18 +87,20 @@ if __name__ == '__main__':
         # print(t)
 
 
-        testo = np.array([1,8,3,17,8,6,7], dtype=np.float32)
-        print(helpers.moving_average(testo,3))
+        # testo = np.array([1,8,3,17,8,6,7], dtype=np.float32)
+        # print(helpers.moving_average(testo,3))
         # print(helpers_pythran.moving_average(testo,3))
         # print(testo.dtype)
         # print(uniform_filter1d(testo, 3))
 
         # Jonas hat ~ 3h gebraucht hierfür auf dem Minnesota Cluster
-        # npz_file = np.load(npz_path)
-        #
-        # print(np.shape(npz_file))
-        # print(npz_file.files)
-        # print(np.shape(npz_file["data"]))
+        npz_file = np.load(npz_path)
 
+        print(np.shape(npz_file))
+        print(npz_file.files)
+        print(np.shape(npz_file["data"]))
+        data = npz_file["data"]
+        # firdif.firdif_np(data, 0.97, 3, printers=True)
+        convar.convar_np(data, 0.97, 1, init_out_matrix_method="firdif")
 
     # np.show_config()

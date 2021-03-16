@@ -8,7 +8,7 @@ import firdif
 import time
 # import torch
 from functools import partial
-
+import plot_code_excerpts
 
 def deconv_testing(cal_data, ROI=None):
     """
@@ -142,7 +142,9 @@ def deconv(cal_data, ROI=None):
     for k in range(0, len(all_lambda)):
         _lambda = all_lambda[k]
 
-        r, r1, beta0 = convar.convar_np(odd_traces, gamma, _lambda)
+        # r, r1, beta0 = convar.convar_np(odd_traces, gamma, _lambda)
+        # r, r1, beta0 = convar.convar_np(odd_traces, gamma, _lambda, output_mat=np.concatenate((r1,r)), init_out_matrix_method="input")
+        r, r1, beta0 = plot_code_excerpts.convar_np(odd_traces, gamma, _lambda)
         # r, r1, beta0 = firdif.firdif_np(odd_traces, gamma, 3)
 
         # calculating the changes in spiking rate in each deconvolve trace
