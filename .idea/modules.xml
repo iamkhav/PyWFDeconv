@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Python_Wide_Field_Deconvolution.iml" filepath="$PROJECT_DIR$/.idea/Python_Wide_Field_Deconvolution.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/PyWFDeconv.iml" filepath="$PROJECT_DIR$/.idea/PyWFDeconv.iml" />
     </modules>
   </component>
 </project>
