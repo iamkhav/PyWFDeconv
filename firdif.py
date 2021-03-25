@@ -15,7 +15,6 @@ Original Docstring:
 % Returns the deconvolved rate r_final (T-1xn)
 % the first point of the calcium r1 (1xn)
 % and the offset beta 0 (1Xn)
-
 """
 
 

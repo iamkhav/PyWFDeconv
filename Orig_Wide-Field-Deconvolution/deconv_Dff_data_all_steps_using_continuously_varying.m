@@ -66,21 +66,21 @@ end
 [min_error_convar,best_lambda_convar_indx] = min(mean(calcium_dif_convar,2));
 best_lambda_convar = all_lambda(best_lambda_convar_indx);
 %%
-figure(1)
-loglog(mean(penalty_size_convar,2),mean(calcium_dif_convar,2),'LineWidth',2)
-title('Continuously-Varying Average Error')
-set(gca, 'FontSize', 16)
-xlabel('penalty','FontSize',16)
-ylabel('error','FontSize',20)
-box('off') 
-
-figure(2)
-plot(all_lambda,mean(calcium_dif_convar,2),'LineWidth',2)
-title('Continuously-Varying Average Error')
-set(gca, 'FontSize', 16)
-xlabel('\lambda','FontSize',16)
-ylabel('error','FontSize',20)
-box('off') 
+% figure(1)
+% loglog(mean(penalty_size_convar,2),mean(calcium_dif_convar,2),'LineWidth',2)
+% title('Continuously-Varying Average Error')
+% set(gca, 'FontSize', 16)
+% xlabel('penalty','FontSize',16)
+% ylabel('error','FontSize',20)
+% box('off') 
+% 
+% figure(2)
+% plot(all_lambda,mean(calcium_dif_convar,2),'LineWidth',2)
+% title('Continuously-Varying Average Error')
+% set(gca, 'FontSize', 16)
+% xlabel('\lambda','FontSize',16)
+% ylabel('error','FontSize',20)
+% box('off') 
 
 %% now the deconvolution would yield best results
 

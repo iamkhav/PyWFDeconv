@@ -4,8 +4,7 @@ workspace.xml
 misc.xml
 venv/
 venv37/
-/__pycache__/
+__pycache__/
 /Orig_Wide-Field-Deconvolution/sandbox_amon.asv
-/data_Jonas.hdf5
-/Orig_Wide-Field-Deconvolution/data_Jonas.hdf5
+data_Jonas.hdf5
 /Todo.txt

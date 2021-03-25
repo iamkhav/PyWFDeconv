@@ -1,12 +1,18 @@
 import numpy as np
 
+"""
+Defaults:
+mean_threshold : 0.00001
+biggest_pog_neg_sum_threshold : 0.003
+"""
+
 
 def mean_threshold(gradient, threshold=0.00001):
     if(np.abs(np.mean(gradient)) < threshold):
         return True
 
 
-def biggest_pos_neg_sum_threshold(gradient, threshold=0.003):
+def biggest_pos_neg_sum_threshold(gradient, threshold=0.0003):
     """
     Find biggest positive and biggest |negative|.
     If no negative values, 0 is returned.
