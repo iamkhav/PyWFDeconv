@@ -1,22 +1,23 @@
+import PyWFDeconv.deconv_Dff as deconv_Dff
+import PyWFDeconv.deconv_testingAndPlots as deconv_testingAndPlots
+import PyWFDeconv.firdif as firdif
+import PyWFDeconv.convar as convar
+import PyWFDeconv.helpers as helpers
+import PyWFDeconv.helpers_pythran as helpers_pythran
+import PyWFDeconv
+
 import torch
 import numpy as np
-import deconv_Dff
-import deconv_testingAndPlots
-import firdif
-import convar
+from scipy.io import loadmat
 import sys
 import h5py
-from scipy.io import loadmat
-from scipy.ndimage.filters import uniform_filter1d
-import helpers
-import wrappers
-import helpers_pythran
 import timeit
 import datetime
 
-example_data_path = r"Clancy_etal_fluorescence_example.mat"
-h5_path = r"data_Jonas.hdf5"
-npz_path = r"F0205_tseries_38_DF_by_F0_351_50_cut200_600_compressed.npz"
+
+example_data_path = r"ExampleData/Clancy_etal_fluorescence_example.mat"
+h5_path = r"ExampleData/data_Jonas.hdf5"
+npz_path = r"ExampleData/F0205_tseries_38_DF_by_F0_351_50_cut200_600_compressed.npz"
 
 """
 This is a translation and enhancement of the matlab code included in the following paper:
@@ -52,8 +53,9 @@ torch.set_printoptions(threshold=sys.maxsize, precision=10)
 torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
-    mode = 10
+    mode = 11
     print(f"Launching program.. at {datetime.datetime.now()}")
+
 
     if(mode == 1):
         """Current Main"""
@@ -67,11 +69,13 @@ if __name__ == '__main__':
         # deconv_Dff_experimental.deconv_multicore_ray(cal_data=cal_data)
         # deconv_Dff_experimental.deconv_torch_jit(cal_data=cal_data)
 
+
     if(mode == 2):
         """Tests and Benchmarks"""
         data_import = loadmat(example_data_path)
         cal_data = data_import["cal_data"]
         deconv_testingAndPlots.deconv_testing(cal_data=cal_data)
+
 
     if(mode == 3):
         """Plots"""
@@ -97,16 +101,11 @@ if __name__ == '__main__':
 
 
     if(mode == 6):
-        #Testing
+        """Testing"""
         # testi = np.array([[1,2,3], [4, -2, 3.5], [-10, -12, 23.2]])
         # testi = np.array([2,3,4])
-        # big_small_sum = helpers.biggest_pos_neg_sum(testi)
-
-        # testo = np.random.rand(1000000).astype(np.float32)
-        # t = timeit.Timer(lambda: helpers.moving_average(testo,3)).repeat(3, 100)
-        # print(t)
-        # print(testo.dtype)
-        # t = timeit.Timer(lambda: helpers_pythran.moving_average(testo,3)).repeat(3, 100)
+        # big_small_sum = early_stops.biggest_pos_neg_sum(testi)
+        # t = timeit.Timer(early_stops.biggest_pos_neg_sum(testi)).repeat(3, 100)
         # print(t)
 
 
@@ -121,6 +120,7 @@ if __name__ == '__main__':
         # firdif.firdif_np(data, 0.97, 3, printers=True)
         # convar.convar_np(data, 0.97, 1)
         convar.convar_np(data, 0.97, 1, earlyStop_bool=False)
+
 
     if(mode == 10):
         """Main Function using Wrappers"""

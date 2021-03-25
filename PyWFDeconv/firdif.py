@@ -1,6 +1,7 @@
 import time
 import numpy as np
-import helpers
+from . import helpers
+
 """
 firdif from Merav Stern's Git.
 Used in initializing the output matrix in convar instead of randomizing.

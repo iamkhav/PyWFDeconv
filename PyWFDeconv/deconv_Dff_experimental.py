@@ -1,12 +1,13 @@
 import numpy as np
+import time
+import torch
+from . import convar_deprecated
+# from functools import partial
 # from torch.multiprocessing import Process, Pool
 """from ray.util.multiprocessing import Pool as RayPool
 import ray"""
 # import torch.multiprocessing as TorchMP
-import convar
-import time
-import torch
-# from functools import partial
+
 
 
 def deconv_torch_jit(cal_data):
@@ -53,7 +54,7 @@ def deconv_torch_jit(cal_data):
         _lambda = all_lambda[k]
 
         start = time.time()
-        r, r1, beta0 = convar.convar_torch_jit(torch.from_numpy(odd_traces), torch.tensor(gamma), torch.tensor(_lambda))
+        r, r1, beta0 = convar_deprecated.convar_torch_jit(torch.from_numpy(odd_traces), torch.tensor(gamma), torch.tensor(_lambda))
         r, r1, beta0 = r.numpy(), r1.numpy(), beta0.numpy()
         end = time.time()
         print("Time:", end-start)

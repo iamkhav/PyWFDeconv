@@ -4,7 +4,7 @@ import torch
 import time
 # import gc
 from numba import jit
-import helpers
+from . import helpers
 
 
 

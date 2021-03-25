@@ -2,12 +2,14 @@ import numpy as np
 from scipy import linalg
 import torch
 import time
-import firdif
-import early_stops
+from . import (
+    firdif,
+    early_stops,
+    helpers
+)
 # import warnings
 # import cupy as cp
 # import gc
-import helpers
 """
 Advanced Versions of Convar with all features.
 -Amon
