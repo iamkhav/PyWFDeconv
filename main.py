@@ -4,7 +4,7 @@ import PyWFDeconv.firdif as firdif
 import PyWFDeconv.convar as convar
 import PyWFDeconv.helpers as helpers
 import PyWFDeconv.helpers_pythran as helpers_pythran
-import PyWFDeconv
+import PyWFDeconv as wfd
 
 import torch
 import numpy as np
@@ -53,7 +53,7 @@ torch.set_printoptions(threshold=sys.maxsize, precision=10)
 torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
-    mode = 11
+    mode = 10
     print(f"Launching program.. at {datetime.datetime.now()}")
 
 
@@ -130,6 +130,6 @@ if __name__ == '__main__':
         data = npz_file["data"]
         data = data[:50, :10000]
 
+        wfd.find_best_lambda(data)
 
-        wrappers.find_best_lambda(data)
     # np.show_config()
