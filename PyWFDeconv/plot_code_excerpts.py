@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import linregress
 from . import (
     early_stops,
     firdif,
@@ -299,8 +300,7 @@ def average_per_frame(y, gamma, _lambda, init_out_matrix = "rand", earlyStop_boo
         #     break
 
         # Adaptive LR -Amon
-        s = s * helpers.scale_to(np.abs(np.mean(gradient)), 2, 0.5)
-        s = s * 0.9
+        #Todo BRAUCHT NEUE IMPLEMENTIERUNG
 
 
     # Smooth r
@@ -315,38 +315,38 @@ def average_per_frame(y, gamma, _lambda, init_out_matrix = "rand", earlyStop_boo
     for i in y[start_Frame:]:
         # average_original.append(np.mean(i) / np.std(y))
         average_original.append(np.mean(i))
-    average_original = helpers.normalize_1_minus1(average_original)
+    average_original = helpers.normalize_1_0(average_original)
 
     average_ones = []
     for i in r_ones[start_Frame:]:
         # average_firdif.append(np.mean(i) / np.std(r_ones))
         average_ones.append(np.mean(i))
-    average_ones = helpers.normalize_1_minus1(average_ones)
+    average_ones = helpers.normalize_1_0(average_ones)
 
     average_rand = []
     for i in r_rand[start_Frame:]:
         # average_firdif.append(np.mean(i) / np.std(average_rand))
         average_rand.append(np.mean(i))
-    average_rand = helpers.normalize_1_minus1(average_rand)
+    average_rand = helpers.normalize_1_0(average_rand)
 
     average_firdif = []
     for i in r_firdif[start_Frame:]:
         # average_firdif.append(np.mean(i) / np.std(r_firdif))
         average_firdif.append(np.mean(i))
-    average_firdif = helpers.normalize_1_minus1(average_firdif)
+    average_firdif = helpers.normalize_1_0(average_firdif)
 
     average_firdifLR = []
     for i in r_firdifLR[start_Frame:]:
         # average_firdifLR.append(np.mean(i) / np.std(r_firdifLR))
         average_firdifLR.append(np.mean(i))
-    average_firdifLR = helpers.normalize_1_minus1(average_firdifLR)
+    average_firdifLR = helpers.normalize_1_0(average_firdifLR)
 
 
     # Plot
     plt.rcParams.update({'font.size': 16})
-    plt.plot(average_original, label="Original", linewidth=2, alpha=0.5)
-    plt.plot(average_firdif, label="FirDif", linewidth=2)
-    plt.plot(average_firdifLR, label="FirDif Adaptive LR", linewidth=2)
+    plt.plot(average_original, label="Original", linewidth=2, alpha=0.5, color="b")
+    plt.plot(average_firdif, label="FirDif", linewidth=2, color="orange")
+    plt.plot(average_firdifLR, label="FirDif Adaptive LR", linewidth=2, color="magenta")
     plt.plot(average_rand, label="Random", linewidth=2)
     plt.plot(average_ones, label="Ones", linewidth=2)
     plt.ylabel("Mean/Std Output")
@@ -360,8 +360,8 @@ def average_per_frame(y, gamma, _lambda, init_out_matrix = "rand", earlyStop_boo
 
     # One Pixel over Frames
     pixel_index = 6
-    plt.plot(y[10:, pixel_index] / np.std(y), label="Original", linewidth=2)
-    plt.plot(r_firdif[10:, pixel_index] / np.std(r_firdif), label="FirDif", linewidth=2)
+    plt.plot(y[10:, pixel_index] / np.std(y), label="Original", linewidth=2, alpha=0.5, color="b")
+    plt.plot(r_firdif[10:, pixel_index] / np.std(r_firdif), label="FirDif", linewidth=2, color="orange")
     plt.legend()
     plt.show()
 
@@ -376,4 +376,79 @@ def average_per_frame(y, gamma, _lambda, init_out_matrix = "rand", earlyStop_boo
     # beta_0 = np.mean(y - np.matmul(Dinv, r), axis=0)
 
     return 0,0,0
+
+
+def scale_t_scale_p():
+    """Data based on benches, recorded in Excel and pasted here.."""
+    plt.rcParams.update({'font.size': 13})
+    plt.rcParams["figure.figsize"] = (8, 6)
+
+    #
+    #
+    # T Plot
+    #
+    benches = [52.35, 115.78, 248.28, 514.10, 1038.93]
+    # x_ticks = ["25x10000", "50x10000", "100x10000", "200x10000", "400x10000"]
+    x_ticks = ["25", "50", "100", "200", "400"]
+    ranger = [25,50,100,200,400]
+    plt.xticks(ranger,x_ticks, rotation=30)
+
+    slope, intercept, r, p, se = linregress(ranger, benches)
+
+
+    plt.plot(ranger, benches, color="r")
+    plt.title(f"Static P=10000, scaling T")
+    plt.ylabel("Time [s]")
+    plt.xlabel("T")
+    # plt.text(200, 700, f"slope={round(slope, 2)}")
+    plt.yscale("log")
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+    #
+    #
+    # T Plot P = 5000
+    #
+    benches = [13.3, 58.72, 124.56, 260.09, 573.59]
+    x_ticks = ["25", "50", "100", "200", "400"]
+    ranger = [25,50,100,200,400]
+    plt.xticks(ranger,x_ticks, rotation=30)
+
+    slope, intercept, r, p, se = linregress(ranger, benches)
+
+
+    plt.plot(ranger, benches, color="r")
+    plt.title(f"Static P=5000, scaling T")
+    plt.ylabel("Time [s]")
+    plt.xlabel("T")
+    # plt.text(200, 370, f"slope={round(slope, 2)}")
+    plt.yscale("log")
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+    #
+    #
+    # P Plot
+    #
+    benches = [81.82, 166.09, 317.9, 602.16, 1106.9]
+    # benches = [80, 160, 320, 640, 1280]
+    x_ticks = ["625", "1250", "2500", "5000", "10000"]
+    # x_ticks = ["400x625", "400x1250", "400x2500", "400x5000", "400x10000"]
+    ranger = [625,1250,2500,5000,10000]
+
+    plt.xticks(ranger,x_ticks, rotation=30)
+
+    slope, intercept, r, p, se = linregress(ranger, benches)
+
+    plt.plot(ranger, benches, color="r")
+    plt.title(f"Static T=400, scaling P")
+    plt.ylabel("Time [s]")
+    plt.xlabel("P")
+    # plt.text(5000, 810, f"slope={round(slope, 2)}")
+    # plt.yscale("log")
+    plt.tight_layout()
+    plt.show()
+    plt.close()
 

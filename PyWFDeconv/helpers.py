@@ -3,6 +3,7 @@ import numpy as np
 from scipy.ndimage.filters import uniform_filter1d
 import warnings
 import multiprocessing
+import math
 
 
 def CleanDFFO(data, ROI=None):
@@ -117,20 +118,95 @@ def normalize_1_minus1(arrayo):
 
     return outo
 
-def determine_num_workers():
+def normalize_1_0(arrayo):
+    """
+        Wraps the scale_to function and scales from 1 to -1
+
+    :param arrayo:
+    :return:
+    """
+    maxo = np.max(arrayo)
+    mino = np.min(arrayo)
+    outo = [scale_to(x, 1, 0, maxo, mino) for x in arrayo]
+
+    return outo
+
+def determine_num_workers(printers=True):
     """
         Automatic determination of cores to be used for multiple process spawns of convar (just a recommendation).
 
     :return: Integer with workers to use
     """
     num_cores = multiprocessing.cpu_count()
-    print(f"Number of cores: {num_cores}")
+    if(printers): print(f"Number of cores: {num_cores}")
 
     if(num_cores > 8):
-        print("Number of cores above 8, picking num_worker = 8.")
-        print("If CPU load isn't 100% consistently, try increasing num_workers.")
+        if (printers):
+            print("Number of cores above 8, picking num_worker = 8.")
+            print("If CPU load isn't 100% consistently, try increasing num_workers.")
         return 8
     else:
-        print(f"Using all available cores: {num_cores}")
-        print(f"Try {num_cores - 1} if you encounter problems or want to use the Computer while running this.")
+        if (printers):
+            print(f"Using all available cores: {num_cores}")
+            print(f"Try {num_cores - 1} if you encounter problems or want to use the Computer while running this.")
         return num_cores
+
+def chunk_list(data, mode, chunk_size):
+    """
+        Chunks a list or ndarray.
+
+    :param data:
+    :param mode: "pct"|"flat"
+    :param chunk_size:
+    :return:
+    """
+    n = 1
+    len_t = np.shape(data)[0]
+    gotta_drop_last_chunk = False
+
+
+    if(mode=="pct"):
+        if(chunk_size > 1 or chunk_size <= 0):
+            raise Exception("Invalid value for chunk_size!!! In pct mode chunk_size needs to be ]0,1].")
+        n = math.ceil(len_t * chunk_size)
+
+    if(mode=="flat"):
+        if(chunk_size < 1 or chunk_size > len_t):
+            raise Exception("Invalid value for chunk_size!!! In flat mode chunk_size needs to be [1, T[.")
+        n = chunk_size
+
+    num_chunks = math.ceil(len_t / n)
+
+    # if(len_t % n != 0):
+    #     gotta_drop_last_chunk = True
+
+    """All Solutions throw a deprecated warning.. Nested Numpy Arrays of different sizes apparently shouldn't be in any container without throwing that warning."""
+
+    #Solution1 - works with warning
+    output = [data[i*n : (i+1)*n] for i in range(0, num_chunks)]
+
+
+    #Solution2 - array_split doesn't exactly do what I thought.. => doesn't work as intended anyway
+    # output = np.array_split(data, num_chunks)
+    # print(np.shape(output))
+    # print(output)
+
+    #Solution3 - works with warning
+    # output = []
+    # for i in range(0, num_chunks):
+    #     if(i == num_chunks-1 and gotta_drop_last_chunk):
+    #         output.append(data[i * n:])
+    #         break
+    #
+    #     output.append(data[i*n : (i+1)*n])
+
+    # with warnings.catch_warnings():
+    #     warnings.simplefilter("ignore")
+    #     Put stuff here to ignore the deprecation warning...
+
+    # print(f"n: {n}")
+    print(f"Number of Chunks: {num_chunks}")
+    # print(np.shape(output))
+    # print(output)
+
+    return output

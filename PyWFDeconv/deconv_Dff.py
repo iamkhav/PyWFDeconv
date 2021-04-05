@@ -62,7 +62,8 @@ def deconv(cal_data, ROI=None):
     for k in range(0, len(all_lambda)):
         _lambda = all_lambda[k]
 
-        r, r1, beta0 = convar.convar_np(odd_traces, gamma, _lambda)
+        # r, r1, beta0 = convar.convar_np(odd_traces, gamma, _lambda)
+        r, r1, beta0 = convar.convar_cow(odd_traces, gamma, _lambda)
         # r, r1, beta0 = convar.convar_np(odd_traces, gamma, _lambda, earlyStop_f=early_stops.biggest_pos_neg_sum_threshold)
         # r, r1, beta0 = convar.convar_np(odd_traces, gamma, _lambda, output_mat=np.concatenate((r1,r)), init_out_matrix_method="input")
         # r, r1, beta0 = plot_code_excerpts.convar_np(odd_traces, gamma, _lambda)

@@ -4,6 +4,8 @@ import PyWFDeconv.firdif as firdif
 import PyWFDeconv.convar as convar
 import PyWFDeconv.helpers as helpers
 import PyWFDeconv.helpers_pythran as helpers_pythran
+import PyWFDeconv.plot_code_excerpts as plot_code_excerpts
+
 import PyWFDeconv as wfd
 
 import torch
@@ -13,7 +15,8 @@ import sys
 import h5py
 import timeit
 import datetime
-
+def testo():
+    return 1,2,3,4
 
 example_data_path = r"ExampleData/Clancy_etal_fluorescence_example.mat"
 h5_path = r"ExampleData/data_Jonas.hdf5"
@@ -53,7 +56,7 @@ torch.set_printoptions(threshold=sys.maxsize, precision=10)
 torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
-    mode = 10
+    mode = 6
     print(f"Launching program.. at {datetime.datetime.now()}")
 
 
@@ -71,7 +74,7 @@ if __name__ == '__main__':
 
 
     if(mode == 2):
-        """Tests and Benchmarks"""
+        """Tests/Benchmarks"""
         data_import = loadmat(example_data_path)
         cal_data = data_import["cal_data"]
         deconv_testingAndPlots.deconv_testing(cal_data=cal_data)
@@ -81,8 +84,11 @@ if __name__ == '__main__':
         """Plots"""
         data_import = loadmat(example_data_path)
         cal_data = data_import["cal_data"]
-        deconv_testingAndPlots.deconv_for_plots(cal_data=cal_data)
+        # deconv_testingAndPlots.deconv_for_plots(cal_data=cal_data)
         # deconv_testingAndPlots.deconv_T_and_P_plot(cal_data=cal_data)
+
+        plot_code_excerpts.scale_t_scale_p()
+
 
 
     if(mode == 5):
@@ -109,27 +115,67 @@ if __name__ == '__main__':
         # print(t)
 
 
+        data_import = loadmat(example_data_path)
+        cal_data = data_import["cal_data"] * 100
+        # print(np.shape(cal_data))
+        # cal_data = data_import["cal_data"]
+
+        #Todo:  Daten sammeln, um zu zeigen, dass an kleineren P die T splitting wie vermutet ist
+        cal_data = cal_data[:, :]
+
+        # print(np.shape(cal_data))
+
+        gamma = 0.97
+        # cal_data = cal_data[::2]
+        # gamma = 1 - (1 - gamma) / 0.5
+
+        convar.convar_cow(cal_data, gamma, 0.5)
+        # convar.convar_np(cal_data, 0.97, 1)
+
+
         # Jonas hat ~ 3h gebraucht hierfür auf dem Minnesota Cluster
         npz_file = np.load(npz_path)
 
-        # print(np.shape(npz_file))
-        # print(npz_file.files)
+        gamma = 0.92
         data = npz_file["data"]
-        data = data[:200, :10000]
-        print(f"Shape of Data: {np.shape(data)}")
-        # firdif.firdif_np(data, 0.97, 3, printers=True)
-        # convar.convar_np(data, 0.97, 1)
-        convar.convar_np(data, 0.97, 1, earlyStop_bool=False)
+        data = data[:400, :500]
+        # data = data[:50, :5000]
+        # print(f"Shape of Data: {np.shape(data)}")
+        # firdif.firdif_np(data, gamma, 3, printers=True)
+        # convar.convar_np(data, gamma, 1)
+        # convar.convar_half_torch(data, gamma, 1)
+
+        # convar.convar_np(data, gamma, 1, early_stop_bool=False)
+
+
+        # convar.convar_cow(data, gamma, 1)
 
 
     if(mode == 10):
         """Main Function using Wrappers"""
 
-        # 1. Import data into a numpy ndarray, format it to have TxP dimension (P should be the pixels of the image per frame)
+        # 1. Import data into a numpy ndarray, expected format: 2d TxP ndarray (T:frames, P:pixels)
         npz_file = np.load(npz_path)
         data = npz_file["data"]
-        data = data[:50, :10000]
+        data = data[:200, :500]
+        # data_import = loadmat(example_data_path)
+        # cal_data = data_import["cal_data"] * 100
+        # data = cal_data[:200,:]
 
-        wfd.find_best_lambda(data)
+        # convar.convar_np(data, 0.97, 1)
+
+        # 2. Determine which lambda yields best results
+        # best_lambda = wfd.find_best_lambda(data, num_iters=2000)
+        best_lambda = wfd.find_best_lambda(data, gamma=0.92, convar_num_iters=2000)        # Jonas data, Gamma adjusted
+
+
+        # 3. Deconvolve using best lambda
+        # wfd.deconvolve(data, chunk_t_bool=True, best_lambda=best_lambda)
+
+
+
+
+
 
     # np.show_config()
+

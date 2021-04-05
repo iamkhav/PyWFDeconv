@@ -1,5 +1,5 @@
 import numpy as np
-
+import torch
 """
 Defaults:
 mean_threshold : 0.00001
@@ -9,6 +9,13 @@ biggest_pog_neg_sum_threshold : 0.003
 
 def mean_threshold(gradient, threshold=0.00001):
     if(np.abs(np.mean(gradient)) < threshold):
+        return True
+    # print(np.mean(np.abs(gradient)))
+    # if(np.mean(np.abs(gradient)) < threshold):
+    #     return True
+
+def mean_threshold_torch(gradient, threshold=0.00001):
+    if(torch.abs(torch.mean(gradient)) < threshold):
         return True
 
 
