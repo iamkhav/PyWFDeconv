@@ -129,8 +129,8 @@ if __name__ == '__main__':
         # cal_data = cal_data[::2]
         # gamma = 1 - (1 - gamma) / 0.5
 
-        convar.convar_cow(cal_data, gamma, 0.5)
-        # convar.convar_np(cal_data, 0.97, 1)
+        # convar.convar_cow(cal_data, gamma, 0.5)
+        convar.convar_np(cal_data, gamma, 1, early_stop_bool=False)
 
 
         # Jonas hat ~ 3h gebraucht hierfür auf dem Minnesota Cluster
@@ -143,6 +143,7 @@ if __name__ == '__main__':
         # print(f"Shape of Data: {np.shape(data)}")
         # firdif.firdif_np(data, gamma, 3, printers=True)
         # convar.convar_np(data, gamma, 1)
+        # convar.convar_np(data, gamma, 1, num_iters=10000, early_stop_bool=False)
         # convar.convar_half_torch(data, gamma, 1)
 
         # convar.convar_np(data, gamma, 1, early_stop_bool=False)
@@ -170,7 +171,7 @@ if __name__ == '__main__':
 
 
         # 3. Deconvolve using best lambda
-        # wfd.deconvolve(data, chunk_t_bool=True, best_lambda=best_lambda)
+        wfd.deconvolve(data, chunk_t_bool=True, best_lambda=best_lambda)
 
 
 

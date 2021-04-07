@@ -8,15 +8,19 @@ biggest_pog_neg_sum_threshold : 0.003
 
 
 def mean_threshold(gradient, threshold=0.00001):
-    if(np.abs(np.mean(gradient)) < threshold):
-        return True
-    # print(np.mean(np.abs(gradient)))
-    # if(np.mean(np.abs(gradient)) < threshold):
+    # if(np.abs(np.mean(gradient)) < threshold):
     #     return True
+    # print(np.mean(np.abs(gradient)))
+    if(np.mean(np.abs(gradient)) < threshold):
+        return True
 
 def mean_threshold_torch(gradient, threshold=0.00001):
     if(torch.abs(torch.mean(gradient)) < threshold):
         return True
+
+
+def mean_abs(gradient):
+    return np.mean(np.abs(gradient))
 
 
 def biggest_pos_neg_sum_threshold(gradient, threshold=0.0003):

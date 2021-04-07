@@ -21,7 +21,7 @@ Advanced Versions of Convar with all features.
 def convar_np(
     y, gamma, _lambda,
     init_out_matrix_method = "firdif", init_output_mat=None,
-    early_stop_bool=True, early_stop_f=early_stops.mean_threshold, return_stop_iter=False,
+    early_stop_bool=True, early_stop_f=early_stops.mean_abs, early_stop_threshold=0.00001,return_stop_iter=False,
     num_iters=10000,
     adapt_lr_bool=False
         ):
@@ -79,6 +79,9 @@ def convar_np(
     mid = time.time()
     early_stopped_at = 1
     did_we_early_stop = False
+    metric_gradient_i = np.empty(1)
+    metric_gradient_prev_i = np.empty(1)
+    metric_gradient_bigger_counter = 0
 
     # deconvolution
     for i in range(0, num_iters):
@@ -96,13 +99,14 @@ def convar_np(
         # Zr = linalg.blas.sgemm(1, Z, r)
 
 
+
         if(adapt_lr_bool):
             # Using this because adapt_lr modifies s. This way the gradient is smaller because of the smaller lr (s) and we have to take an invariant s. -Amon
 
             true_scaling_gradient = s_start * At_tmAr - s_start * _lambda * Zr
 
             # Early Stop -Amon
-            if (early_stop_bool and early_stop_f(true_scaling_gradient)):
+            if (early_stop_bool and early_stop_f(true_scaling_gradient) < early_stop_threshold):
                 early_stopped_at = i
                 did_we_early_stop = True
 
@@ -122,6 +126,19 @@ def convar_np(
         r[r < 0] = 0
         r[0] = x[0]
 
+        # Gradient Comparison -Amon
+        if(not adapt_lr_bool):
+            metric_gradient_i = early_stop_f(gradient)
+            if(i > 0):
+                # if(metric_gradient_i > (metric_gradient_prev_i + 0.01 * metric_gradient_prev_i)):
+                if(metric_gradient_i > (metric_gradient_prev_i)):
+                    metric_gradient_bigger_counter += 1
+                    if(metric_gradient_bigger_counter >= 5):
+                        print(metric_gradient_bigger_counter)
+                        print("Current", metric_gradient_i)
+                        print("Past", metric_gradient_prev_i)
+                else:
+                    metric_gradient_bigger_counter = 0
 
         # Adaptive LR -Amon
         if(adapt_lr_bool):
@@ -135,10 +152,14 @@ def convar_np(
                     s = s * 4
 
         # # Old Early Stop -Amon
-        if((not adapt_lr_bool) and early_stop_bool and early_stop_f(gradient)):
+        if((not adapt_lr_bool) and early_stop_bool and early_stop_f(gradient) < early_stop_threshold):
             early_stopped_at = i
             did_we_early_stop = True
             break
+
+        # Gradient Comparison -Amon
+        if(not adapt_lr_bool):
+            metric_gradient_prev_i = metric_gradient_i
 
     r_final = r[1:]
     r1 = r[0:1]

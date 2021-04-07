@@ -428,6 +428,54 @@ def scale_t_scale_p():
     plt.show()
     plt.close()
 
+
+    #
+    #
+    # T Plot P = 500
+    #
+    benches = [3.31, 4.56, 7.34, 16.03, 56.18]
+    x_ticks = ["25", "50", "100", "200", "400"]
+    ranger = [25,50,100,200,400]
+    plt.xticks(ranger,x_ticks, rotation=30)
+
+    slope, intercept, r, p, se = linregress(ranger, benches)
+
+
+    plt.plot(ranger, benches, color="r")
+    plt.title(f"Static P=500, scaling T")
+    plt.ylabel("Time [s]")
+    plt.xlabel("T")
+    # plt.text(200, 370, f"slope={round(slope, 2)}")
+    # plt.yscale("log")
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+
+
+    #
+    #
+    # T Plot P = 100
+    #
+    benches = [0.32, 0.67, 3.61, 6.25, 13.96]
+    x_ticks = ["25", "50", "100", "200", "400"]
+    ranger = [25,50,100,200,400]
+    plt.xticks(ranger,x_ticks, rotation=30)
+
+    slope, intercept, r, p, se = linregress(ranger, benches)
+
+
+    plt.plot(ranger, benches, color="r")
+    plt.title(f"Static P=100, scaling T")
+    plt.ylabel("Time [s]")
+    plt.xlabel("T")
+    # plt.text(200, 370, f"slope={round(slope, 2)}")
+    # plt.yscale("log")
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+
     #
     #
     # P Plot
