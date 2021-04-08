@@ -130,7 +130,9 @@ if __name__ == '__main__':
         # gamma = 1 - (1 - gamma) / 0.5
 
         # convar.convar_cow(cal_data, gamma, 0.5)
-        convar.convar_np(cal_data, gamma, 1, early_stop_bool=False)
+        # convar.convar_np(cal_data, gamma, 1, early_stop_bool=False)
+        convar.convar_np(cal_data, gamma, 1)
+        convar.convar_np(cal_data, gamma, 1, adapt_lr_bool=True)
 
 
         # Jonas hat ~ 3h gebraucht hierfür auf dem Minnesota Cluster

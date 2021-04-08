@@ -83,6 +83,177 @@ def convar_np(
     metric_gradient_prev_i = np.empty(1)
     metric_gradient_bigger_counter = 0
 
+    # Adaptive LR, start increase -Amon
+    if (adapt_lr_bool):
+        # Start with a higher lr
+        if (0.1 <= _lambda <= 1):
+            s = s * helpers.scale_to(_lambda, 4, 1.5, 1, 0.1)
+            # s = s * helpers.scale_to(_lambda, 4, 1.5, 1, 0.1)
+        elif (_lambda < 0.1):
+            s = s * 1.5
+        else:
+            s = s * 4
+
+    # deconvolution
+    for i in range(0, num_iters):
+        # # Numpy Matmuls
+        Ar = np.matmul(A, r)
+        tmAr = (tildey - Ar)
+        At_tmAr = np.matmul(np.transpose(A), tmAr)
+        Zr = np.matmul(Z, r)
+
+        # # Scipy BLAS Matmuls
+        # Ar = linalg.blas.sgemm(1, A, r)
+        # tmAr = (tildey - Ar)
+        # At_tmAr = linalg.blas.sgemm(1, np.transpose(A), tmAr)
+        # Zr = linalg.blas.sgemm(1, Z, r)
+
+
+
+        if(adapt_lr_bool):
+            # Using this because adapt_lr modifies s. This way the gradient is smaller because of the smaller lr (s) and we have to take an invariant s. -Amon
+
+            true_scaling_gradient = s_start * At_tmAr - s_start * _lambda * Zr
+
+            # Early Stop -Amon
+            if (early_stop_bool and early_stop_f(true_scaling_gradient) < early_stop_threshold):
+                early_stopped_at = i
+                did_we_early_stop = True
+
+                # Conservative gradient descent -Amon
+                x = r + true_scaling_gradient
+                r = x
+                r[r < 0] = 0
+                r[0] = x[0]
+                break
+
+        # Calc Gradient -Amon
+        gradient = s * At_tmAr - s * _lambda * Zr
+
+        # Gradient Descent -Amon
+        x = r + gradient
+        r = x
+        r[r < 0] = 0
+        r[0] = x[0]
+
+        # Gradient Comparison -Amon
+        if(adapt_lr_bool):
+            metric_gradient_i = early_stop_f(gradient)
+            if(i > 0):
+                # if(metric_gradient_i > (metric_gradient_prev_i + 0.01 * metric_gradient_prev_i)):
+                if(metric_gradient_i > (metric_gradient_prev_i)):
+                    metric_gradient_bigger_counter += 1
+                    if(metric_gradient_bigger_counter >= 5):
+                        print(metric_gradient_bigger_counter)
+                        print("Current", metric_gradient_i)
+                        print("Past", metric_gradient_prev_i)
+                else:
+                    metric_gradient_bigger_counter = 0
+
+
+
+        # # NoAdaptLr Early Stop -Amon
+        if((not adapt_lr_bool) and early_stop_bool and (early_stop_f(gradient) < early_stop_threshold)):
+            early_stopped_at = i
+            did_we_early_stop = True
+            break
+
+        # Gradient Comparison -Amon
+        if(adapt_lr_bool):
+            metric_gradient_prev_i = metric_gradient_i
+
+    r_final = r[1:]
+    r1 = r[0:1]
+    beta_0 = np.mean(y - np.matmul(Dinv, r), axis=0)
+
+    print("------------------------------------------------------")
+    print("Numpy stats")
+    print(f"{'Mid convar time: ':^40} {round(mid - start, 2)}s")
+    convar_time = time.time()-start
+    print(f"{'Convar time:':^40} {round(convar_time, 2)}s")
+
+    if(early_stop_bool and did_we_early_stop):
+        print(f"{'Early stop at iteration:':^40} {early_stopped_at}")
+
+        if(early_stopped_at>0):
+            print(f"{'Estimated time w / o Early Stop:':^40} {round(convar_time * (1 / (early_stopped_at / num_iters)), 2)}s")
+        # print("Mean Abs Grad", np.mean(np.abs(true_scaling_gradient)))
+        # print("Max, Min", np.max(true_scaling_gradient), np.min(true_scaling_gradient))
+        # print("Std Grad ddof0", np.std(true_scaling_gradient, ddof=0))
+        # print("Std Grad ddof1", np.std(true_scaling_gradient, ddof=1))
+
+    if(return_stop_iter):
+        return r_final,r1,beta_0, early_stopped_at
+    else:
+        return r_final,r1,beta_0
+
+
+
+def old_convar_np(
+    y, gamma, _lambda,
+    init_out_matrix_method = "firdif", init_output_mat=None,
+    early_stop_bool=True, early_stop_f=early_stops.mean_abs, early_stop_threshold=0.00001,return_stop_iter=False,
+    num_iters=10000,
+    adapt_lr_bool=False
+        ):
+    """
+        convar is a straight translation from matlab into numpy with some additional features.
+        -Amon
+    """
+    start = time.time()
+    T = np.shape(y)[0]
+    P = np.identity(T) - 1 / T * np.ones((T,T))
+    tildey = np.matmul(P, y)
+
+    # will be used later to reconstruct the calcium from the deconvoled rates
+    Dinv = np.zeros((T, T))
+
+    for k in range(0, T):
+        for j in range(0, k + 1):
+            exp = (k - j)
+            Dinv[k][j] = gamma ** exp
+
+    A = np.matmul(P, Dinv)
+
+    L1 = np.zeros((T, T))
+    for i in range(0, T):
+        for j in range(0, T):
+            if(i >= 2 and j >= 1):
+                if(i == j):
+                    L1[i][j] = 1
+                if(i == j+1):
+                    L1[i][j] = -1
+
+    Z = np.matmul(np.transpose(L1), L1)
+
+    # large step size that ensures converges
+    s = 0.5 * ( (1-gamma)**2 / ( (1-gamma**T)**2 + (1-gamma)**2 * 4 * _lambda ) )
+    s_start = s
+
+    # Initializing output matrix -Amon
+    if(init_out_matrix_method == "rand"):
+        r = np.random.rand(np.shape(y)[0], np.shape(y)[1])
+    elif(init_out_matrix_method == "ones"):
+        r = np.ones((np.shape(y)[0], np.shape(y)[1]))
+    elif(init_out_matrix_method == "zeros"):
+        r = np.zeros((np.shape(y)[0], np.shape(y)[1]))
+    elif(init_out_matrix_method == "point5"):
+        r = np.zeros((np.shape(y)[0], np.shape(y)[1])) + 0.5
+    elif(init_out_matrix_method == "firdif"):
+        r_a, r_b, _ = firdif.firdif_np(y, gamma, 3)
+        r = np.concatenate((r_b, r_a))
+    elif(init_out_matrix_method == "input"):
+        r = init_output_mat
+    else:
+        raise Exception("init_out_matrix Argument not set correctly")
+
+    mid = time.time()
+    early_stopped_at = 1
+    did_we_early_stop = False
+    metric_gradient_i = np.empty(1)
+    metric_gradient_prev_i = np.empty(1)
+    metric_gradient_bigger_counter = 0
+
     # deconvolution
     for i in range(0, num_iters):
         # print(i)
@@ -152,7 +323,7 @@ def convar_np(
                     s = s * 4
 
         # # Old Early Stop -Amon
-        if((not adapt_lr_bool) and early_stop_bool and early_stop_f(gradient) < early_stop_threshold):
+        if((not adapt_lr_bool) and early_stop_bool and (early_stop_f(gradient) < early_stop_threshold)):
             early_stopped_at = i
             did_we_early_stop = True
             break
@@ -185,6 +356,7 @@ def convar_np(
         return r_final,r1,beta_0, early_stopped_at
     else:
         return r_final,r1,beta_0
+
 
 
 
