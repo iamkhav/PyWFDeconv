@@ -122,36 +122,41 @@ if __name__ == '__main__':
 
         #Todo:  Daten sammeln, um zu zeigen, dass an kleineren P die T splitting wie vermutet ist
         cal_data = cal_data[:, :]
+        cal_data = np.float32(cal_data)
+        print(cal_data.dtype)
+
 
         # print(np.shape(cal_data))
 
         gamma = 0.97
         # cal_data = cal_data[::2]
         # gamma = 1 - (1 - gamma) / 0.5
-
-        # convar.convar_cow(cal_data, gamma, 0.5)
+        # plot_code_excerpts.convar_cow(cal_data, gamma, 80)
         # convar.convar_np(cal_data, gamma, 1, early_stop_bool=False)
         convar.convar_np(cal_data, gamma, 1)
-        convar.convar_np(cal_data, gamma, 1, adapt_lr_bool=True)
+        # convar.convar_np(cal_data, gamma, 1, adapt_lr_bool=True)
+        # convar.convar_np(cal_data, gamma, 1, adapt_lr_bool=True, early_stop_bool=False)
 
 
         # Jonas hat ~ 3h gebraucht hierfür auf dem Minnesota Cluster
         npz_file = np.load(npz_path)
 
-        gamma = 0.92
+        # gamma = 0.92
         data = npz_file["data"]
-        data = data[:400, :500]
+        data = data[:, :5000]
+        # data = data[:400, :500]
         # data = data[:50, :5000]
         # print(f"Shape of Data: {np.shape(data)}")
         # firdif.firdif_np(data, gamma, 3, printers=True)
         # convar.convar_np(data, gamma, 1)
+        # convar.convar_np(data, gamma, 1, adapt_lr_bool=True)
         # convar.convar_np(data, gamma, 1, num_iters=10000, early_stop_bool=False)
         # convar.convar_half_torch(data, gamma, 1)
 
         # convar.convar_np(data, gamma, 1, early_stop_bool=False)
 
 
-        # convar.convar_cow(data, gamma, 1)
+        # plot_code_excerpts.convar_cow(data, gamma, 1)
 
 
     if(mode == 10):
@@ -161,6 +166,7 @@ if __name__ == '__main__':
         npz_file = np.load(npz_path)
         data = npz_file["data"]
         data = data[:200, :500]
+
         # data_import = loadmat(example_data_path)
         # cal_data = data_import["cal_data"] * 100
         # data = cal_data[:200,:]
@@ -168,13 +174,20 @@ if __name__ == '__main__':
         # convar.convar_np(data, 0.97, 1)
 
         # 2. Determine which lambda yields best results
-        # best_lambda = wfd.find_best_lambda(data, num_iters=2000)
-        best_lambda = wfd.find_best_lambda(data, gamma=0.92, convar_num_iters=2000)        # Jonas data, Gamma adjusted
+        best_lambda = wfd.find_best_lambda(data, convar_num_iters=3000)
+        # best_lambda = wfd.find_best_lambda(data, gamma=0.92, convar_num_iters=2000)        # Jonas data, Gamma adjusted
+        # best_lambda = wfd.find_best_lambda(data, gamma=0.92, convar_num_iters=2000, convar_mode="adapt")        # Jonas data, Gamma adjusted
 
 
         # 3. Deconvolve using best lambda
-        wfd.deconvolve(data, chunk_t_bool=True, best_lambda=best_lambda)
-
+        # wfd.deconvolve(data, chunk_t_bool=True, best_lambda=best_lambda)
+        # wfd.deconvolve(data, chunk_mode="", best_lambda=5)
+        # wfd.deconvolve(data, chunk_mode="p", best_lambda=5, convar_mode="adapt")
+        # wfd.deconvolve(data, chunk_mode="", best_lambda=5, convar_mode="adapt")
+        wfd.deconvolve(data, chunk_mode="", best_lambda=best_lambda, convar_mode="adapt")
+        #
+        # wfd.deconvolve(data, chunk_mode="p", best_lambda=5, convar_mode="standard")
+        # wfd.deconvolve(data, chunk_mode="", best_lambda=5, convar_mode="standard")
 
 
 

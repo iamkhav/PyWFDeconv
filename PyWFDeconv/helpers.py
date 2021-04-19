@@ -141,19 +141,19 @@ def determine_num_workers(printers=True):
     if(printers): print(f"Number of cores: {num_cores}")
 
     if(num_cores > 8):
-        if (printers):
+        if(printers):
             print("Number of cores above 8, picking num_worker = 8.")
             print("If CPU load isn't 100% consistently, try increasing num_workers.")
         return 8
     else:
-        if (printers):
+        if(printers):
             print(f"Using all available cores: {num_cores}")
             print(f"Try {num_cores - 1} if you encounter problems or want to use the Computer while running this.")
         return num_cores
 
-def chunk_list(data, mode, chunk_size):
+def chunk_list_axis0(data, mode, chunk_size):
     """
-        Chunks a list or ndarray.
+        Chunks a list or ndarray, first axis.
 
     :param data:
     :param mode: "pct"|"flat"
@@ -185,6 +185,55 @@ def chunk_list(data, mode, chunk_size):
     #Solution1 - works with warning
     output = [data[i*n : (i+1)*n] for i in range(0, num_chunks)]
 
+
+    #Solution2 - array_split doesn't exactly do what I thought.. => doesn't work as intended anyway
+    # output = np.array_split(data, num_chunks)
+    # print(np.shape(output))
+    # print(output)
+
+    #Solution3 - works with warning
+    # output = []
+    # for i in range(0, num_chunks):
+    #     if(i == num_chunks-1 and gotta_drop_last_chunk):
+    #         output.append(data[i * n:])
+    #         break
+    #
+    #     output.append(data[i*n : (i+1)*n])
+
+    # with warnings.catch_warnings():
+    #     warnings.simplefilter("ignore")
+    #     Put stuff here to ignore the deprecation warning...
+
+    # print(f"n: {n}")
+    print(f"Number of Chunks: {num_chunks}")
+    # print(np.shape(output))
+    # print(output)
+
+    return output
+
+
+def chunk_list_axis1(data, num_chunks):
+    """
+        Chunks a list or ndarray, first axis.
+
+    :param data:
+    :param mode: "pct"|"flat"
+    :param chunk_size:
+    :return:
+    """
+    n = 1
+    len_p = np.shape(data)[1]
+    gotta_drop_last_chunk = False
+
+    n = math.ceil(len_p / num_chunks)
+
+    # if(len_p % n != 0):
+    #     gotta_drop_last_chunk = True
+
+    """All Solutions throw a deprecated warning.. Nested Numpy Arrays of different sizes apparently shouldn't be in any container without throwing that warning."""
+
+    #Solution1 - works with warning
+    output = [data[:,i*n : (i+1)*n] for i in range(0, num_chunks)]
 
     #Solution2 - array_split doesn't exactly do what I thought.. => doesn't work as intended anyway
     # output = np.array_split(data, num_chunks)

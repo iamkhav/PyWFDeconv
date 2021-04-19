@@ -35,7 +35,8 @@ all_lambda          - Lambdas to be tested
     
 convar_mode         - "standard"|"cow"
                     - standard  = One conventional run with early Stop activated, First Difference method for output matrix init and standard LR
-                    - cow       = Two runs, first adds the experimental adaptive LR, feeding the output of that into a standard convar run (hopefully instantly terminating)
+                    - adapt     = Using Adaptive LR
+                    - cow       = Two runs, first adds the experimental adaptive LR, feeding the output of that into a standard convar run (hopefully instantly terminating) DELETE?!
                     
 convar_algo         - "numpy"|"scipyBLAS"|"torchCUDA"
 
@@ -44,21 +45,27 @@ convar_num_iters    - number of iterations for convar to run
 early_stop_bool     - Sets Early Stop function for convar
 
 printers            - Settings printers to false reduces prints to bare minimum
+                    - "minimize"|"silent"|"full"
 """
 
 
 
 def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None,
                      convar_mode="standard", convar_algo="numpy", convar_num_iters=2000, early_stop_bool=False,
-                     printers=True):
+                     printers="minimize"):
     """Docstring"""
 
-    if(printers): print("------------------------------------------------------")
+    print("------------------------------------------------------")
+    #Todo print Information on Input: P-Dimension, T-Dimension, Datatype
+    # Print settings of current run in general
+    print("")
 
     # Workers Init
     if(num_workers == None):
         print("Argument num_workers left blank, determining num_workers..")
-        num_workers = helpers.determine_num_workers(printers=printers)
+        num_workers_printers = False
+        if(printers == "full"): num_workers_printers = True
+        num_workers = helpers.determine_num_workers(printers=num_workers_printers)
 
     # Carry over from MatLab
     data = data * 100
@@ -94,13 +101,19 @@ def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None,
     calcium_dif_convar = np.zeros((len(all_lambda), rep))
 
     start = time.time()
-    # partial_f = partial(convar.convar_cow, odd_traces, gamma)
-    partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool)
+
+    if(convar_mode == "standard"):
+        partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, printers=False)
+    elif(convar_mode == "adapt"):
+        partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, adapt_lr_bool=True, printers=False)
+    else:
+        raise Exception("Invalid convar_mode passed into function!")
+
     with Pool(num_workers) as p:
         results = p.map(partial_f, all_lambda)
 
     end = time.time()
-    if(printers): print("All Convars time:", end - start)
+    if(not printers == "silent"): print("All Convars time:", end - start)
 
     c = 0
     for k in results:
@@ -120,7 +133,7 @@ def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None,
     best_lambda_convar_indx = np.argmin(temp)
     best_lambda_convar = all_lambda[best_lambda_convar_indx]
 
-    if (printers):
+    if(not printers == "silent"):
         print("------------------------------------------------------")
         print("------------------------------------------------------")
         print("Min error Convar:", min_error_convar)
@@ -141,7 +154,9 @@ best_lambda         - determined in find_best_lambda, default: 1
 num_workers         - Number of parallel processes to be used
                     - If num_workers is left at None, helpers.determine_num_workers() will recommend a num_workers and use it. 
                     
-chunk_t_bool        - Determines if T should be chunked and used in Multiprocessing
+chunk_mode          - Determines if T or P should be chunked and used in Multiprocessing
+                    - If left empty, no MP will happen
+                    - "t"|"p"|""
     
 chunk_x_mode        - If this is set to "pct", it will chunk into a percentage of all data (or use x% of the chunks for overlap).
                     - If this is set to "flat", it will just take a flat amount of frames for chunks or overlap.
@@ -149,10 +164,11 @@ chunk_x_mode        - If this is set to "pct", it will chunk into a percentage o
                     -               chunk_overlap_mode="pct" and chunk_overlap=0.5, take 50% of the chunks for overlap. The 20% remainder chunk will also use 50% of the 40% chunks.
                     - chunk_size shouldn't create chunks smaller than 10 frames.. 
                     - Try increasing chunk_size if you get this Exception: "ValueError: zero-size array to reduction operation minimum which has no identity"
+                    - Only valid for chunk_mode = "t"
                     
-convar_mode         - "standard"|"cow"
+convar_mode         - "standard"|"adapt"
                     - standard  = One conventional run with early Stop activated, First Difference method for output matrix init and standard LR
-                    - cow       = Two runs, first adds the experimental adaptive LR, feeding the output of that into a standard convar run (hopefully instantly terminating)
+                    - adapt     = Using Adaptive LR
                     
 convar_algo         - "numpy"|"scipyBLAS"|"torchCUDA"
 
@@ -163,8 +179,9 @@ convar_num_iters    - number of iterations for convar to run
 def deconvolve(
     data, gamma=0.97, best_lambda=1,
     num_workers=None,
-    chunk_t_bool=False, chunk_size_mode="flat", chunk_size=14, chunk_overlap_mode="flat", chunk_overlap=10,
-    convar_mode="standard", convar_algo="", convar_num_iters=10000
+    chunk_mode="", chunk_size_mode="flat", chunk_size=14, chunk_overlap_mode="flat", chunk_overlap=10,
+    convar_mode="standard", convar_algo="", convar_num_iters=10000,
+    printers=True
         ):
     """Docstring"""
     #Todo catch bad chunk mode settings, e.g. mode "flat" and size bigger than the input or something..
@@ -175,28 +192,50 @@ def deconvolve(
         num_workers = helpers.determine_num_workers()
 
 
-    #Todo add convar_algo and convar_mode capability
+    #Todo add convar_algo capability
 
     # Creating convar function with prefilled arguments (so Pool.map can be used)
     lambda_convar = partial(__convar_arg_reorganizer, gamma, best_lambda, convar_num_iters, convar_mode, convar_algo)
 
-    if(chunk_t_bool):
+    start = time.time()
+    if(chunk_mode.lower() == "t"):
         # Chunk T, MP on T
 
-        data_list = helpers.chunk_list(data, mode=chunk_size_mode, chunk_size=chunk_size)
-
+        data_list = helpers.chunk_list_axis0(data, mode=chunk_size_mode, chunk_size=chunk_size)
         with Pool(num_workers) as p:
             results = p.map(lambda_convar, data_list)
             # results = p.apply_async(__convar_spawner, range(0,10))
-    else:
+        #Todo (if t chunking is needed): Stitching results
+
+    elif(chunk_mode.lower() == "p"):
         # Chunk P, MP on P
-        pass
+
+        # Force number of chunks to be 16 or 8 (Good Number for MP)
+        data_list = helpers.chunk_list_axis1(data, num_chunks=8)
+        with Pool(num_workers) as p:
+            results = p.map(lambda_convar, data_list)
+
+
+    else:
+        r_final,r1,beta_0 = lambda_convar(data)
+
+    end = time.time()
+
+    if(printers):
+        print("------------------------------------------------------")
+        print("------------------------------------------------------")
+        print("All Convars time:", end - start)
+
+    return #r_final,r1,beta_0
 
 
 
 def __convar_arg_reorganizer(gamma, _lambda, num_iters, convar_mode, convar_algo, data):
     """Needed for functool.partials (maybe?).. Else I'll use lambdas.."""
-    return convar.convar_np(data, gamma, _lambda, num_iters=num_iters)
+    if(convar_mode == "standard"):
+        return convar.convar_np(data, gamma, _lambda, num_iters=num_iters)
+    if(convar_mode == "adapt"):
+        return convar.convar_np(data, gamma, _lambda, num_iters=num_iters, adapt_lr_bool=True)
 
 
 def __convar_spawner(x):

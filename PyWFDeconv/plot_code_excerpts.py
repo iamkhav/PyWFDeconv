@@ -2,10 +2,12 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import linregress
+from math import ceil
 from . import (
     early_stops,
     firdif,
-    helpers
+    helpers,
+    convar
 )
 
 
@@ -499,4 +501,107 @@ def scale_t_scale_p():
     plt.tight_layout()
     plt.show()
     plt.close()
+
+
+
+def convar_cow(y, gamma, _lambda):
+    """
+        This convar function first does an experimental run with adaptive lr and then a conservative run on the first runs output with conventional settings.
+        Very experimental.
+        Worst case is both runs using all iterations instead of early stopping (which would probably yield more accurate results tho).
+        Best case however is the first run early stopping somewhere and the second run stopping at iteration 0 (because the calculated gradient is so small).
+
+    :param y:
+    :param gamma:
+    :param _lambda:
+    :return:
+    """
+    fr, fr1, _ = convar.convar_np(y, gamma, _lambda)
+    # stitched_fr = np.concatenate((fr1, fr))
+    # mr, mr1, mbeta0 = convar.convar_np(y, gamma, _lambda, init_out_matrix_method="input", init_output_mat=stitched_fr)
+
+
+    # r, r1, _, stop_iter = convar.convar_np(y, gamma, _lambda, adapt_lr_bool=True)
+    # # r, r1, _ = convar.convar_np(y, gamma, _lambda, adapt_lr_bool=True, earlyStop_bool=False)
+    #
+    # stitched_r = np.concatenate((r1, r))
+    # nr, nr1, nbeta0 = convar.convar_np(y, gamma, _lambda, init_out_matrix_method="input", init_output_mat=stitched_r)
+
+
+    #
+    #
+    r, r1, beta0, stop_iter = convar.convar_np(y, gamma, _lambda, adapt_lr_bool=True, return_stop_iter=True)
+    # r, r1, _ = convar.convar_np(y, gamma, _lambda, adapt_lr_bool=True, earlyStop_bool=False)
+    # stop_iter = ceil(stop_iter/10)
+    # stitched_r = np.concatenate((r1, r))
+    # r, r1, _ = convar.convar_np(y, gamma, _lambda, init_out_matrix_method="input", init_output_mat=stitched_r, num_iters=stop_iter, early_stop_bool=False)
+    # stitched_r = np.concatenate((r1, r))
+    # nr, nr1, nbeta0 = convar.convar_np(y, gamma, _lambda, init_out_matrix_method="input", init_output_mat=stitched_r)
+    nr, nr1, nbeta0 = r, r1, beta0
+
+
+    # PLOT
+    start_Frame = 10
+
+    average_original = []
+    for i in y[start_Frame:]:
+        # average_original.append(np.mean(i) / np.std(y))
+        average_original.append(np.mean(i))
+    average_original = helpers.normalize_1_0(average_original)
+
+
+    average_firdif = []
+    for i in fr[start_Frame:]:
+        # average_firdif.append(np.mean(i) / np.std(r_firdif))
+        average_firdif.append(np.mean(i))
+    average_firdif = helpers.normalize_1_0(average_firdif)
+
+    average_firdifhalfLR = []
+    for i in r[start_Frame:]:
+        # average_firdifLR.append(np.mean(i) / np.std(r_firdifLR))
+        average_firdifhalfLR.append(np.mean(i))
+    average_firdifhalfLR = helpers.normalize_1_0(average_firdifhalfLR)
+
+    average_firdifLR = []
+    for i in nr[start_Frame:]:
+        # average_firdifLR.append(np.mean(i) / np.std(r_firdifLR))
+        average_firdifLR.append(np.mean(i))
+    average_firdifLR = helpers.normalize_1_0(average_firdifLR)
+
+
+
+    # Plot 1
+    plt.rcParams.update({'font.size': 13})
+    plt.rcParams["figure.figsize"] = (8, 6)
+
+    plt.plot(average_original, label="Original", linewidth=2, alpha=0.5, color="b")
+    plt.plot(average_firdif, label="Standard FirDif Convar", linewidth=2, color="orange")
+    # plt.plot(average_firdifhalfLR, label="Half FirDif Adaptive LR", linewidth=2, color="plum")
+    plt.plot(average_firdifLR, label="Double Convar + Adaptive LR", linewidth=2, color="magenta")
+
+    plt.ylabel("Mean of Output")
+    plt.xlabel("Frames")
+    plt.title("Convar: Mean of Output per Frame")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+    diffo = np.array(average_firdif) - np.array(average_firdifLR)
+    print(f"Mean Difference: {np.mean(diffo)}")
+
+    # Plot 2 Difference - Useless?
+    # diffo = np.array(average_firdif) - np.array(average_firdifLR)
+    # plt.plot(diffo, label="a = Standard, b = DoubleConvar+AdaptLR", linewidth=2, color="magenta")
+    #
+    # plt.ylabel("Mean of Output (a) - Mean of Output (b)")
+    # plt.xlabel("Frames")
+    # plt.title("Convar: Difference of Mean of Output per Frame")
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.show()
+    # plt.close()
+
+
+    return nr, nr1, nbeta0
 

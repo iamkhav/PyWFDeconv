@@ -4,6 +4,9 @@ import torch
 Defaults:
 mean_threshold : 0.00001
 biggest_pog_neg_sum_threshold : 0.003
+
+Early stop metrics, wrapped into a function so it can be passed into the convar as an argument.
+The metric function takes the gradient as an input and outputs a metric as a float.
 """
 
 
@@ -18,9 +21,6 @@ def mean_threshold_torch(gradient, threshold=0.00001):
     if(torch.abs(torch.mean(gradient)) < threshold):
         return True
 
-
-def mean_abs(gradient):
-    return np.mean(np.abs(gradient))
 
 
 def biggest_pos_neg_sum_threshold(gradient, threshold=0.0003):
@@ -49,3 +49,7 @@ def biggest_pos_neg_sum_threshold(gradient, threshold=0.0003):
 
     if(curr_bigpos + np.abs(curr_bigneg) < threshold):
         return True
+
+
+def mean_abs(gradient):
+    return np.mean(np.abs(gradient))
