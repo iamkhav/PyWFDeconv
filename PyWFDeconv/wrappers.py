@@ -32,11 +32,10 @@ num_workers         - Number of parallel processes to be used
                     - If num_workers is left at None, helpers.determine_num_workers() will recommend a num_workers and use it.
     
 all_lambda          - Lambdas to be tested
-    
-convar_mode         - "standard"|"cow"
+
+convar_mode         - "standard"|"adapt"
                     - standard  = One conventional run with early Stop activated, First Difference method for output matrix init and standard LR
                     - adapt     = Using Adaptive LR
-                    - cow       = Two runs, first adds the experimental adaptive LR, feeding the output of that into a standard convar run (hopefully instantly terminating) DELETE?!
                     
 convar_algo         - "numpy"|"scipyBLAS"|"torchCUDA"
 
@@ -45,12 +44,12 @@ convar_num_iters    - number of iterations for convar to run
 early_stop_bool     - Sets Early Stop function for convar
 
 printers            - Settings printers to false reduces prints to bare minimum
-                    - "minimize"|"silent"|"full"
+                    - "silent"|"minimize"|"full"
 """
 
 
 
-def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None,
+def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_100=True,
                      convar_mode="standard", convar_algo="numpy", convar_num_iters=2000, early_stop_bool=False,
                      printers="minimize"):
     """Docstring"""
@@ -58,17 +57,16 @@ def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None,
     print("------------------------------------------------------")
     #Todo print Information on Input: P-Dimension, T-Dimension, Datatype
     # Print settings of current run in general
-    print("")
 
+    num_workers_printers = False
     # Workers Init
     if(num_workers == None):
         print("Argument num_workers left blank, determining num_workers..")
-        num_workers_printers = False
         if(printers == "full"): num_workers_printers = True
         num_workers = helpers.determine_num_workers(printers=num_workers_printers)
 
     # Carry over from MatLab
-    data = data * 100
+    if(times_100):data = data * 100
 
     # Cut Lambdas, divisible by 2 for MP
     # Not defining this in def: line because mutable arguments are bad style
@@ -103,9 +101,9 @@ def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None,
     start = time.time()
 
     if(convar_mode == "standard"):
-        partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, printers=False)
+        partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, printers=num_workers_printers)
     elif(convar_mode == "adapt"):
-        partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, adapt_lr_bool=True, printers=False)
+        partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, adapt_lr_bool=True, printers=num_workers_printers)
     else:
         raise Exception("Invalid convar_mode passed into function!")
 
@@ -177,7 +175,7 @@ convar_num_iters    - number of iterations for convar to run
 """
 
 def deconvolve(
-    data, gamma=0.97, best_lambda=1,
+    data, gamma=0.97, best_lambda=1, times_100=True,
     num_workers=None,
     chunk_mode="", chunk_size_mode="flat", chunk_size=14, chunk_overlap_mode="flat", chunk_overlap=10,
     convar_mode="standard", convar_algo="", convar_num_iters=10000,
@@ -191,6 +189,8 @@ def deconvolve(
         print("Argument num_workers left blank, determining num_workers..")
         num_workers = helpers.determine_num_workers()
 
+    # Carry over from MatLab
+    if(times_100):data = data * 100
 
     #Todo add convar_algo capability
 

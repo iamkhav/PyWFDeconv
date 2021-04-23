@@ -15,8 +15,6 @@ import sys
 import h5py
 import timeit
 import datetime
-def testo():
-    return 1,2,3,4
 
 example_data_path = r"ExampleData/Clancy_etal_fluorescence_example.mat"
 h5_path = r"ExampleData/data_Jonas.hdf5"
@@ -56,7 +54,7 @@ torch.set_printoptions(threshold=sys.maxsize, precision=10)
 torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
-    mode = 6
+    mode = 10
     print(f"Launching program.. at {datetime.datetime.now()}")
 
 
@@ -122,8 +120,8 @@ if __name__ == '__main__':
 
         #Todo:  Daten sammeln, um zu zeigen, dass an kleineren P die T splitting wie vermutet ist
         cal_data = cal_data[:, :]
-        cal_data = np.float32(cal_data)
-        print(cal_data.dtype)
+        # cal_data = np.float32(cal_data)
+        # print(cal_data.dtype)
 
 
         # print(np.shape(cal_data))
@@ -131,9 +129,9 @@ if __name__ == '__main__':
         gamma = 0.97
         # cal_data = cal_data[::2]
         # gamma = 1 - (1 - gamma) / 0.5
-        # plot_code_excerpts.convar_cow(cal_data, gamma, 80)
+        plot_code_excerpts.convar_cow(cal_data, gamma, 1)
         # convar.convar_np(cal_data, gamma, 1, early_stop_bool=False)
-        convar.convar_np(cal_data, gamma, 1)
+        # convar.convar_np(cal_data, gamma, 1)
         # convar.convar_np(cal_data, gamma, 1, adapt_lr_bool=True)
         # convar.convar_np(cal_data, gamma, 1, adapt_lr_bool=True, early_stop_bool=False)
 
@@ -155,7 +153,6 @@ if __name__ == '__main__':
 
         # convar.convar_np(data, gamma, 1, early_stop_bool=False)
 
-
         # plot_code_excerpts.convar_cow(data, gamma, 1)
 
 
@@ -165,17 +162,16 @@ if __name__ == '__main__':
         # 1. Import data into a numpy ndarray, expected format: 2d TxP ndarray (T:frames, P:pixels)
         npz_file = np.load(npz_path)
         data = npz_file["data"]
-        data = data[:200, :500]
+        data = data[:, :]
 
         # data_import = loadmat(example_data_path)
-        # cal_data = data_import["cal_data"] * 100
-        # data = cal_data[:200,:]
-
-        # convar.convar_np(data, 0.97, 1)
+        # cal_data = data_import["cal_data"]
+        # data = cal_data
 
         # 2. Determine which lambda yields best results
-        best_lambda = wfd.find_best_lambda(data, convar_num_iters=3000)
-        # best_lambda = wfd.find_best_lambda(data, gamma=0.92, convar_num_iters=2000)        # Jonas data, Gamma adjusted
+        # best_lambda = wfd.find_best_lambda(data, convar_num_iters=2000, printers="minimize", convar_mode="adapt")
+        # best_lambda = wfd.find_best_lambda(data, convar_num_iters=2000, printers="minimize", convar_mode="adapt")
+        best_lambda = wfd.find_best_lambda(data[:200, :500], gamma=0.92, convar_num_iters=2000, convar_mode="adapt")        # Jonas data, Gamma adjusted
         # best_lambda = wfd.find_best_lambda(data, gamma=0.92, convar_num_iters=2000, convar_mode="adapt")        # Jonas data, Gamma adjusted
 
 

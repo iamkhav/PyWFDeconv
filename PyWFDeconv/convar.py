@@ -208,6 +208,7 @@ def convar_np(
         if(not adapt_lr_bool):
             metric_gradient_i = early_stop_metric_f(gradient)
         print(f"{'Metric Gradient:':^40} {metric_gradient_i}")
+        # print(_lambda)
         # print(f"Rollback Counter: {rollback_counter}")
 
         if(early_stop_bool and did_we_early_stop):
