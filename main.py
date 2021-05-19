@@ -1,20 +1,27 @@
 import PyWFDeconv.deconv_Dff as deconv_Dff
-import PyWFDeconv.deconv_testingAndPlots as deconv_testingAndPlots
+import PyWFDeconv.plot_deconv_testingAndPlots as deconv_testingAndPlots
 import PyWFDeconv.firdif as firdif
 import PyWFDeconv.convar as convar
 import PyWFDeconv.helpers as helpers
-import PyWFDeconv.helpers_pythran as helpers_pythran
 import PyWFDeconv.plot_code_excerpts as plot_code_excerpts
+# import PyWFDeconv.convar_deprecated as convar_deprecated
+import PyWFDeconv.plot_matmul_complexity as plot_matmul_complexity
+import PyWFDeconv.plot_slicedT_vs_regular as plot_slicedT_vs_regular
+import PyWFDeconv.plot_normalized_vs_regular as plot_normalized_vs_regular
+import PyWFDeconv.plot_generic_functions as plot_generic_functions
+import PyWFDeconv.early_stops as early_stops
 
 import PyWFDeconv as wfd
 
-import torch
+# import torch
 import numpy as np
 from scipy.io import loadmat
 import sys
 import h5py
 import timeit
 import datetime
+# import cProfile
+# import time
 
 example_data_path = r"ExampleData/Clancy_etal_fluorescence_example.mat"
 h5_path = r"ExampleData/data_Jonas.hdf5"
@@ -43,20 +50,16 @@ You should monitor CPU load % while using a single worker to see how a single co
 
 """
 
-#Todo
-# Warum sind die Values von beta0 nach 4. Nachkommastelle verschieden bei OPENBLAS scipy???
-
 # To see full arrays
-np.set_printoptions(threshold=sys.maxsize, precision=10)
-torch.set_printoptions(threshold=sys.maxsize, precision=10)
+# np.set_printoptions(threshold=sys.maxsize, precision=10)
+# torch.set_printoptions(threshold=sys.maxsize, precision=10)
 
 # Set Torch default datatype to double, replicating the Matlab calculations
-torch.set_default_dtype(torch.float64)
+# torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
     mode = 10
     print(f"Launching program.. at {datetime.datetime.now()}")
-
 
     if(mode == 1):
         """Current Main"""
@@ -114,24 +117,21 @@ if __name__ == '__main__':
 
 
         data_import = loadmat(example_data_path)
-        cal_data = data_import["cal_data"] * 100
+        cal_data = data_import["cal_data"] #* 100
         # print(np.shape(cal_data))
         # cal_data = data_import["cal_data"]
 
         #Todo:  Daten sammeln, um zu zeigen, dass an kleineren P die T splitting wie vermutet ist
         cal_data = cal_data[:, :]
-        # cal_data = np.float32(cal_data)
-        # print(cal_data.dtype)
 
-
-        # print(np.shape(cal_data))
 
         gamma = 0.97
         # cal_data = cal_data[::2]
         # gamma = 1 - (1 - gamma) / 0.5
-        plot_code_excerpts.convar_cow(cal_data, gamma, 1)
+        # plot_code_excerpts.convar_cow(cal_data, gamma, 1)
         # convar.convar_np(cal_data, gamma, 1, early_stop_bool=False)
         # convar.convar_np(cal_data, gamma, 1)
+        # cProfile.run("convar.convar_np(cal_data, gamma, 1)")
         # convar.convar_np(cal_data, gamma, 1, adapt_lr_bool=True)
         # convar.convar_np(cal_data, gamma, 1, adapt_lr_bool=True, early_stop_bool=False)
 
@@ -139,15 +139,25 @@ if __name__ == '__main__':
         # Jonas hat ~ 3h gebraucht hierfür auf dem Minnesota Cluster
         npz_file = np.load(npz_path)
 
-        # gamma = 0.92
+        gamma = 0.92
         data = npz_file["data"]
-        data = data[:, :5000]
-        # data = data[:400, :500]
+        data = data[:400, :]
+        # data = data[:100, :10000]
         # data = data[:50, :5000]
-        # print(f"Shape of Data: {np.shape(data)}")
-        # firdif.firdif_np(data, gamma, 3, printers=True)
-        # convar.convar_np(data, gamma, 1)
-        # convar.convar_np(data, gamma, 1, adapt_lr_bool=True)
+
+        firdif, _, _ = firdif.firdif_np(data, 0.92, 3)
+        # a,_,_ = wfd.deconvolve(data, best_lambda=1, gamma=0.92, adapt_lr_bool=True, convar_earlystop_threshold=0.000000001, convar_earlystop_metric=early_stops.mean_square, num_workers=0)
+        a,_,_ = wfd.deconvolve(data, best_lambda=1, gamma=0.92, adapt_lr_bool=True, convar_earlystop_threshold=0.0001, num_workers=0)
+        b,_,_ = wfd.deconvolve(data, best_lambda=1, gamma=0.92, adapt_lr_bool=True, convar_earlystop_threshold=0.00001, num_workers=0)
+        plot_generic_functions.plot_r_finals((data,a,b))
+
+
+        # start = time.time()
+        # for x in range(0,10):
+        #     # convar.convar_np(data, gamma, 5, adapt_lr_bool=True)
+        #     wfd.deconvolve(data, gamma, 5, adapt_lr_bool=True, num_workers=0)
+        # print(time.time() - start)
+
         # convar.convar_np(data, gamma, 1, num_iters=10000, early_stop_bool=False)
         # convar.convar_half_torch(data, gamma, 1)
 
@@ -155,6 +165,29 @@ if __name__ == '__main__':
 
         # plot_code_excerpts.convar_cow(data, gamma, 1)
 
+    if(mode == 7):
+        """Plot functions"""
+
+        # Data import
+        # Merav
+        data_import = loadmat(example_data_path)
+        cal_data = data_import["cal_data"]
+        # Jonas
+        npz_file = np.load(npz_path)
+        data = npz_file["data"]
+        data = data[:, :1000]
+
+        ## Matmul runtimes with scaled T
+        # plot_matmul_complexity.plot_or_bench_matmul_runtime()
+
+        ## Convar runtimes with scaled T
+        # plot_matmul_complexity.plot_or_bench_convar_runtimes()
+
+        ## Convar normalized input data vs regular
+        plot_normalized_vs_regular.compare_normalized_vs_regular(cal_data)
+
+        # Sliced T vs regular
+        # plot_slicedT_vs_regular.compare_slice_vs_regular(data)
 
     if(mode == 10):
         """Main Function using Wrappers"""
@@ -163,29 +196,18 @@ if __name__ == '__main__':
         npz_file = np.load(npz_path)
         data = npz_file["data"]
         data = data[:, :]
-
         # data_import = loadmat(example_data_path)
         # cal_data = data_import["cal_data"]
         # data = cal_data
 
-        # 2. Determine which lambda yields best results
-        # best_lambda = wfd.find_best_lambda(data, convar_num_iters=2000, printers="minimize", convar_mode="adapt")
-        # best_lambda = wfd.find_best_lambda(data, convar_num_iters=2000, printers="minimize", convar_mode="adapt")
-        best_lambda = wfd.find_best_lambda(data[:200, :500], gamma=0.92, convar_num_iters=2000, convar_mode="adapt")        # Jonas data, Gamma adjusted
-        # best_lambda = wfd.find_best_lambda(data, gamma=0.92, convar_num_iters=2000, convar_mode="adapt")        # Jonas data, Gamma adjusted
 
+        # 2. Determine which lambda yields best results
+        # lambda_list = wfd.generate_lambda_list(0.5,4,0.1)
+        best_lambda = wfd.find_best_lambda(data[:200, :1000], gamma=0.92, convar_num_iters=2000, adapt_lr_bool=True, num_workers=0)        # Jonas data, Gamma adjusted
+        # best_lambda = wfd.find_best_lambda(data[:200, :1000], gamma=0.92, convar_num_iters=2000, adapt_lr_bool=True, binary_seach_find=True, all_lambda=lambda_list)
 
         # 3. Deconvolve using best lambda
-        # wfd.deconvolve(data, chunk_t_bool=True, best_lambda=best_lambda)
-        # wfd.deconvolve(data, chunk_mode="", best_lambda=5)
-        # wfd.deconvolve(data, chunk_mode="p", best_lambda=5, convar_mode="adapt")
-        # wfd.deconvolve(data, chunk_mode="", best_lambda=5, convar_mode="adapt")
-        wfd.deconvolve(data, chunk_mode="", best_lambda=best_lambda, convar_mode="adapt")
-        #
-        # wfd.deconvolve(data, chunk_mode="p", best_lambda=5, convar_mode="standard")
-        # wfd.deconvolve(data, chunk_mode="", best_lambda=5, convar_mode="standard")
-
-
+        deconvolved, _, _ = wfd.deconvolve(data[:, :], gamma=0.92, best_lambda=5, adapt_lr_bool=True, num_workers=0, convar_earlystop_threshold=0.0000001)
 
 
 

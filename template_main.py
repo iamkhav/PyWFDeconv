@@ -1,8 +1,6 @@
 import numpy as np
 import PyWFDeconv as wfd
 from scipy.io import loadmat
-import sys
-import h5py
 import datetime
 
 #Merav Data
@@ -28,10 +26,10 @@ if __name__ == '__main__':
 
         # 2. Determine which lambda yields best results
         # Jonas data, Gamma adjusted
-        best_lambda = wfd.find_best_lambda(data[:200, :500], gamma=0.92, convar_num_iters=2000, convar_mode="adapt")
+        best_lambda = wfd.find_best_lambda(data[:200, :1000], gamma=0.92, convar_num_iters=2000, adapt_lr_bool=True)
 
         # 3. Deconvolve using best lambda
-        wfd.deconvolve(data, gamma=0.02, best_lambda=best_lambda, convar_mode="adapt")
+        deconvolved, _, _ = wfd.deconvolve(data[:, :], gamma=0.92, best_lambda=best_lambda, adapt_lr_bool=True, num_workers=None, convar_earlystop_threshold=0.0000001)
 
     if(example==2):
         # 1. Import data into a numpy ndarray, expected format: 2d TxP ndarray (T:frames, P:pixels)
@@ -39,7 +37,7 @@ if __name__ == '__main__':
         data = data_import["cal_data"]
 
         # 2. Determine which lambda yields best results
-        best_lambda = wfd.find_best_lambda(data, convar_num_iters=2000, convar_mode="adapt")
+        best_lambda = wfd.find_best_lambda(data[:, :], gamma=0.97, convar_num_iters=2000, adapt_lr_bool=True)
 
         # 3. Deconvolve using best lambda
-        wfd.deconvolve(data, best_lambda=best_lambda, convar_mode="adapt")
+        deconvolved, _, _ = wfd.deconvolve(data[:, :], gamma=0.97, best_lambda=best_lambda, adapt_lr_bool=True)

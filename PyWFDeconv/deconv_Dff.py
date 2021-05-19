@@ -67,7 +67,7 @@ def deconv(cal_data, ROI=None):
         # r, r1, beta0 = convar.convar_np(odd_traces, gamma, _lambda, earlyStop_f=early_stops.biggest_pos_neg_sum_threshold)
         # r, r1, beta0 = convar.convar_np(odd_traces, gamma, _lambda, output_mat=np.concatenate((r1,r)), init_out_matrix_method="input")
         # r, r1, beta0 = plot_code_excerpts.convar_np(odd_traces, gamma, _lambda)
-        # r, r1, beta0 = plot_code_excerpts.average_per_frame(odd_traces, gamma, _lambda)
+        # r, r1, beta0 = plot_code_excerpts.average_gradient_per_frame(odd_traces, gamma, _lambda)
         # r, r1, beta0 = firdif.firdif_np(odd_traces, gamma, 3)
         # print(r)
 

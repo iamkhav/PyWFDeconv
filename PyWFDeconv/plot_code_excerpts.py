@@ -162,7 +162,7 @@ def meanGradient_over_t(y, gamma, _lambda, init_out_matrix = "rand", earlyStop_b
 
 
 
-def average_per_frame(y, gamma, _lambda, init_out_matrix = "rand", earlyStop_bool=True, earlyStop_f=early_stops.mean_threshold, num_iters=10000):
+def average_gradient_per_frame(y, gamma, _lambda, init_out_matrix ="rand", earlyStop_bool=True, earlyStop_f=early_stops.mean_threshold, num_iters=10000):
     """
 
     :param y:
@@ -300,9 +300,6 @@ def average_per_frame(y, gamma, _lambda, init_out_matrix = "rand", earlyStop_boo
         # if(earlyStop_bool and earlyStop_f(gradient)):
         #     print(f"Early Stop at {i} iterations")
         #     break
-
-        # Adaptive LR -Amon
-        #Todo BRAUCHT NEUE IMPLEMENTIERUNG
 
 
     # Smooth r

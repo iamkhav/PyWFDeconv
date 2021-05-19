@@ -53,3 +53,6 @@ def biggest_pos_neg_sum_threshold(gradient, threshold=0.0003):
 
 def mean_abs(gradient):
     return np.mean(np.abs(gradient))
+
+def mean_square(gradient):
+    return np.mean(np.square(gradient))

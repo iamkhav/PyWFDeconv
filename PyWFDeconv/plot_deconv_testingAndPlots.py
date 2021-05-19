@@ -149,5 +149,5 @@ def deconv_for_plots(cal_data, ROI=None):
     for k in range(0, len(all_lambda)):
         _lambda = all_lambda[k]
         # r, r1, beta0 = plot_code_excerpts.meanGradient_over_t(odd_traces, gamma, _lambda)
-        r, r1, beta0 = plot_code_excerpts.average_per_frame(odd_traces, gamma, _lambda)
+        r, r1, beta0 = plot_code_excerpts.average_gradient_per_frame(odd_traces, gamma, _lambda)
 

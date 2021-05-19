@@ -19,7 +19,7 @@ Original Docstring:
 """
 
 
-def firdif_np(y, gamma, smt, shift_to_allPos_bool=True, need_beta0_bool=False, printers=False):
+def firdif_np(y, gamma, smt=3, shift_to_allPos_bool=True, need_beta0_bool=False, printers=False):
     """
 
 

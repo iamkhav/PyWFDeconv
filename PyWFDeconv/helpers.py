@@ -114,7 +114,7 @@ def normalize_1_minus1(arrayo):
     """
     maxo = np.max(arrayo)
     mino = np.min(arrayo)
-    outo = [scale_to(x, 1, -1, maxo, mino) for x in arrayo]
+    outo = np.array([scale_to(x, 1, -1, maxo, mino) for x in arrayo])
 
     return outo
 
@@ -127,7 +127,7 @@ def normalize_1_0(arrayo):
     """
     maxo = np.max(arrayo)
     mino = np.min(arrayo)
-    outo = [scale_to(x, 1, 0, maxo, mino) for x in arrayo]
+    outo = np.array([scale_to(x, 1, 0, maxo, mino) for x in arrayo])
 
     return outo
 
@@ -142,9 +142,9 @@ def determine_num_workers(printers=True):
 
     if(num_cores > 8):
         if(printers):
-            print("Number of cores above 8, picking num_worker = 8.")
+            print(f"Number of cores above 8, picking half cores as num_worker = {num_cores//2}.")
             print("If CPU load isn't 100% consistently, try increasing num_workers.")
-        return 8
+        return num_cores//2
     else:
         if(printers):
             print(f"Using all available cores: {num_cores}")
@@ -254,7 +254,7 @@ def chunk_list_axis1(data, num_chunks):
     #     Put stuff here to ignore the deprecation warning...
 
     # print(f"n: {n}")
-    print(f"Number of Chunks: {num_chunks}")
+    # print(f"{'Number of Chunks:':^40} {num_chunks}")
     # print(np.shape(output))
     # print(output)
 

@@ -1,5 +1,6 @@
-from torch.multiprocessing import Pool
-# from multiprocessing import Pool
+# from torch.multiprocessing import Pool
+import multiprocessing
+from multiprocessing import Pool, cpu_count
 import numpy as np
 from functools import partial
 import time
@@ -7,9 +8,10 @@ from . import (
     helpers,
     convar
 )
+from math import ceil, floor
 
 # Original lambdas if the user wants to call and modify them
-original_all_lambda = [80, 40, 20, 10, 7, 5, 3, 2, 1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.01]
+original_all_lambda = [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1, 2, 3, 5, 7, 10, 20, 40, 80]
 
 
 """
@@ -33,57 +35,39 @@ num_workers         - Number of parallel processes to be used
     
 all_lambda          - Lambdas to be tested
 
-convar_mode         - "standard"|"adapt"
-                    - standard  = One conventional run with early Stop activated, First Difference method for output matrix init and standard LR
-                    - adapt     = Using Adaptive LR
+adapt_lr_bool       - True|False
+                    - False  = One conventional run with early Stop activated, First Difference method for output matrix init and standard LR
+                    - True     = Using Adaptive LR
                     
-convar_algo         - "numpy"|"scipyBLAS"|"torchCUDA"
+convar_algo         - "numpy"|"scipyBLAS"|"halftorch"|"torchCUDA"
 
 convar_num_iters    - number of iterations for convar to run 
 
 early_stop_bool     - Sets Early Stop function for convar
 
 printers            - Settings printers to false reduces prints to bare minimum
-                    - "silent"|"minimize"|"full"
+                    - 0 | 1 | 2
+                    - meaning => "silent"|"minimize"|"full"
+                    
+binary_seach_find   - Uses binary search style algorithm for lambda search.. 
+                    - all_lambda needs to be sorted!!!
+                    - all_lambda needs to have even spacing!!! (best to initialize with wfd.generate_lambda_list
+                    - Can be useful when lambdas are granular and Convars take a long time
+                    - Cuts down number of Convars called from n to logn
+                    - Uses a Cache system that further reduces number of Convars called
 """
 
-
-
-def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_100=True,
-                     convar_mode="standard", convar_algo="numpy", convar_num_iters=2000, early_stop_bool=False,
-                     printers="minimize"):
+def __do_work_best_lambda(partial_convar_f, data, gamma, all_lambda, num_workers=1, printers=1):
     """Docstring"""
-
-    print("------------------------------------------------------")
-    #Todo print Information on Input: P-Dimension, T-Dimension, Datatype
-    # Print settings of current run in general
-
-    num_workers_printers = False
-    # Workers Init
-    if(num_workers == None):
-        print("Argument num_workers left blank, determining num_workers..")
-        if(printers == "full"): num_workers_printers = True
-        num_workers = helpers.determine_num_workers(printers=num_workers_printers)
-
-    # Carry over from MatLab
-    if(times_100):data = data * 100
-
-    # Cut Lambdas, divisible by 2 for MP
-    # Not defining this in def: line because mutable arguments are bad style
-    if(all_lambda==None): all_lambda = [20, 10, 5, 3, 2, 1, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.01]
-
-    # Need to fit for half frequency because we're taking half the data
-    ratio = 0.5
-    gamma = 1 - (1 - gamma) / ratio
-
+    # Error Checking
+    if(num_workers <= 0):
+        num_workers = 1
     odd_traces = data[0::2]
     even_traces = data[1::2]
-
 
     # number of points in each odd/even calcium trace
     T = np.shape(odd_traces)[0]
     rep = np.shape(odd_traces)[1]
-
 
     # will be used later to reconstruct the calcium from the deconvoled rates
     Dinv = np.zeros((T, T))
@@ -99,19 +83,10 @@ def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_
     calcium_dif_convar = np.zeros((len(all_lambda), rep))
 
     start = time.time()
-
-    if(convar_mode == "standard"):
-        partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, printers=num_workers_printers)
-    elif(convar_mode == "adapt"):
-        partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, adapt_lr_bool=True, printers=num_workers_printers)
-    else:
-        raise Exception("Invalid convar_mode passed into function!")
-
     with Pool(num_workers) as p:
-        results = p.map(partial_f, all_lambda)
-
+        results = p.map(partial_convar_f, all_lambda)
     end = time.time()
-    if(not printers == "silent"): print("All Convars time:", end - start)
+    # if(printers > 0): print("All Convars time:", round(end - start, 2))
 
     c = 0
     for k in results:
@@ -131,17 +106,167 @@ def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_
     best_lambda_convar_indx = np.argmin(temp)
     best_lambda_convar = all_lambda[best_lambda_convar_indx]
 
-    if(not printers == "silent"):
+    return best_lambda_convar, min_error_convar, best_lambda_convar_indx
+
+def generate_lambda_list(start_range, end_range, increment):
+    """
+    General helper function to help generate a lambda list for find_best_lambda.
+    Included here (instead of helpers.py) because it might be frequently used by users.
+    Of course wrapping a numpy function doesn't really justify a separate function but hopefully this saves people some time.
+    :param start_range:
+    :param end_range:
+    :param increment:
+    :return:
+    """
+    return list(np.arange(start_range, end_range, increment))
+
+def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_100=False, normalize=True,
+                     adapt_lr_bool=True, convar_algo="numpy", convar_num_iters=2000, early_stop_bool=False,
+                     binary_seach_find=False,
+                     printers=1):
+    """Docstring"""
+
+    if(printers>0):
+        print("------------------------------------------------------")
+        print(f"{'FINDING BEST LAMBDA':^60}")
+        print(f"{'Shape of input data:':^40} {np.shape(data)}")
+        if(adapt_lr_bool):  print(f"{'Using adaptive LR':^40}")
+        else:               print(f"{'Using regular LR':^40}")
+        if(binary_seach_find):
+            print(f"{'Using Binary Search Method':^40}")
+            print(f"{'(Make sure you have even spacing in Lambda List..)':^40}")
+
+
+    min_error_convar = 0
+    best_lambda_convar = 0
+    workers_printers = False
+    # Workers Init
+    if(num_workers == None):
+        if(printers == 2): workers_printers = True
+        num_workers = helpers.determine_num_workers(printers=workers_printers)
+        if(printers > 0): print(f"Argument num_workers left blank, auto-determined {num_workers}..")
+    elif(num_workers == -1):
+        num_workers = multiprocessing.cpu_count()-1
+
+
+    # Carry over from MatLab
+    if(times_100):data = data * 100
+
+    # Cut Lambdas, divisible by 2 for MP
+    # Not defining this in def: line because mutable arguments are bad style
+    if(all_lambda==None): all_lambda = [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1, 2, 3, 5, 10, 20]
+
+    # Need to fit for half frequency because we're taking half the data
+    ratio = 0.5
+    gamma = 1 - (1 - gamma) / ratio
+    odd_traces = data[0::2]
+
+    # Create partial for MP
+    partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, adapt_lr_bool=adapt_lr_bool, printers=workers_printers)
+
+    start = time.time()
+    if(not binary_seach_find):
+        # Go through all lambdas
+        best_lambda_convar, min_error_convar, _ = __do_work_best_lambda(partial_f, data, gamma, all_lambda, num_workers, printers)
+
+    if (binary_seach_find):
+        #Todo check for non-evenly spaced input_lambda_list
+
+        # Binary Search Style Lambda Search
+        left = 0
+        right = len(all_lambda) - 1
+        num_workers = 1
+        # Initialize Cache
+        cache = [-1] * len(all_lambda)
+        temp_best_index = -1
+        number_of_convar_calls = 0
+        which_side_better = ""
+
+        while(right-left > 0):
+            # As long as we have elements to look at..
+            mid = ceil((left + right) / 2)
+            left_mid = floor((left + mid) / 2)
+            right_mid = ceil((right + mid) / 2)
+            print(left, mid, right)
+            print(f"Convar on {left_mid} {right_mid}")
+
+            # Cache check
+            if(cache[left_mid] == -1 and cache[right_mid] == -1):
+                best_lambda_convar, min_error_convar, temp_best_index = __do_work_best_lambda(partial_f, data, gamma, [all_lambda[left_mid],all_lambda[right_mid]], num_workers, printers == 0)
+                number_of_convar_calls += 2
+                if(temp_best_index == 0):
+                    print("Left side better.")
+                    which_side_better = "l"
+                    # Write to cache
+                    cache[left_mid] = min_error_convar
+                if(temp_best_index == 1):
+                    print("Right side better.")
+                    which_side_better = "r"
+                    # Write to cache
+                    cache[right_mid] = min_error_convar
+
+            elif(cache[left_mid] != -1 and cache[right_mid] != -1):
+                print("Left AND Right were cached")
+                if(cache[left_mid] < cache[right_mid]):
+                    print("Left side better.")
+                    which_side_better = "l"
+                    best_lambda_convar = all_lambda[left_mid]
+                else:
+                    print("Right side better.")
+                    which_side_better = "r"
+                    best_lambda_convar = all_lambda[right_mid]
+
+            elif(cache[right_mid] != -1):
+                print("Right was cached")
+                left_best_convar, left_min_error_convar, _ = __do_work_best_lambda(partial_f, data, gamma, [all_lambda[left_mid]], num_workers, printers == 0)
+                number_of_convar_calls += 1
+                if(left_min_error_convar < cache[right_mid]):
+                    print("Left side better.")
+                    which_side_better = "l"
+                    cache[left_mid] = left_min_error_convar
+                    best_lambda_convar = left_best_convar
+                else:
+                    print("Right side better.")
+                    which_side_better = "r"
+                    best_lambda_convar = all_lambda[right_mid]
+
+            elif (cache[left_mid] != -1):
+                print("Left was cached")
+                right_best_convar, right_min_error_convar, _ = __do_work_best_lambda(partial_f, data, gamma, [all_lambda[right_mid]], num_workers, printers == 0)
+                number_of_convar_calls += 1
+                if(cache[left_mid] > right_min_error_convar):
+                    print("Right side better.")
+                    cache[right_mid] = right_min_error_convar
+                    best_lambda_convar = right_best_convar
+                    which_side_better = "r"
+
+                else:
+                    print("Left side better.")
+                    best_lambda_convar = all_lambda[left_mid]
+                    which_side_better = "l"
+
+            # Break condition before setting new boundary
+            if (right - left == 1):
+                break
+            # Set the new mid
+            if(which_side_better == "l"):
+                right = mid
+            elif(which_side_better == "r"):
+                left = mid
+
+            print("..")
+        print(f"Number of Convar Calls: {number_of_convar_calls}")
+
+    if(printers > 0):
         print("------------------------------------------------------")
         print("------------------------------------------------------")
-        print("Min error Convar:", min_error_convar)
-        print("Best Lambda:", best_lambda_convar)
+        print(f"{'Time taken:':^40} {round(time.time() - start, 2)}s")
+        # print(f"{'Min error Convar:':^40} min_error_convar")
+        print(f"{'Best Lambda:':^40} {best_lambda_convar}")
 
     return best_lambda_convar
 
-
 """
-This function chunks P to use Multiprocessing except if chunk_t_bool is True. (nochmal bisschen drüber nachdenken wie man das hier macht...) 
 Argument List:
 data                - input numpy ndarray TxP
     
@@ -151,96 +276,152 @@ best_lambda         - determined in find_best_lambda, default: 1
     
 num_workers         - Number of parallel processes to be used
                     - If num_workers is left at None, helpers.determine_num_workers() will recommend a num_workers and use it. 
+            
                     
-chunk_mode          - Determines if T or P should be chunked and used in Multiprocessing
-                    - If left empty, no MP will happen
-                    - "t"|"p"|""
-    
-chunk_x_mode        - If this is set to "pct", it will chunk into a percentage of all data (or use x% of the chunks for overlap).
-                    - If this is set to "flat", it will just take a flat amount of frames for chunks or overlap.
-                    - Example 1:    chunk_size_mode="pct" and chunk_size=0.4, chunks will be 40%,40% and the remaining 20%
-                    -               chunk_overlap_mode="pct" and chunk_overlap=0.5, take 50% of the chunks for overlap. The 20% remainder chunk will also use 50% of the 40% chunks.
-                    - chunk_size shouldn't create chunks smaller than 10 frames.. 
-                    - Try increasing chunk_size if you get this Exception: "ValueError: zero-size array to reduction operation minimum which has no identity"
-                    - Only valid for chunk_mode = "t"
+adapt_lr_bool       - True|False
+                    - False  = One conventional run with early Stop activated, First Difference method for output matrix init and standard LR
+                    - True     = Using Adaptive LR
                     
-convar_mode         - "standard"|"adapt"
-                    - standard  = One conventional run with early Stop activated, First Difference method for output matrix init and standard LR
-                    - adapt     = Using Adaptive LR
-                    
-convar_algo         - "numpy"|"scipyBLAS"|"torchCUDA"
+convar_algo         - "numpy"|"scipyBLAS"|"halftorch"|"torchCUDA"
 
 convar_num_iters    - number of iterations for convar to run 
 
 """
 
 def deconvolve(
-    data, gamma=0.97, best_lambda=1, times_100=True,
+    data, gamma=0.97, best_lambda=1, times_100=False, normalize=True,
     num_workers=None,
-    chunk_mode="", chunk_size_mode="flat", chunk_size=14, chunk_overlap_mode="flat", chunk_overlap=10,
-    convar_mode="standard", convar_algo="", convar_num_iters=10000,
-    printers=True
-        ):
+    chunk_t_bool=False, chunk_size=100, chunk_overlap=10,
+    adapt_lr_bool=True, convar_algo="", convar_num_iters=10000, convar_earlystop_metric=None, convar_earlystop_threshold=None,
+    printers=1):
     """Docstring"""
-    #Todo catch bad chunk mode settings, e.g. mode "flat" and size bigger than the input or something..
 
+
+    # Normalize Data to [0,1]
+    if(normalize): data = helpers.normalize_1_0(data)
+
+    # Init returns
+    r_final,r1,beta_0 = np.empty(0),0,0
+    chunked_r = 0
+
+    workers_printers = False
+    # Workers Init
     if(num_workers == None):
-        print("------------------------------------------------------")
-        print("Argument num_workers left blank, determining num_workers..")
-        num_workers = helpers.determine_num_workers()
+        if(printers == 2):
+            workers_printers = True
+        num_workers = helpers.determine_num_workers(printers=workers_printers)
+        if(printers > 0): print(f"Argument num_workers left blank, auto-determined {num_workers}..")
+    elif(num_workers == -1):
+        num_workers = multiprocessing.cpu_count()-1
 
     # Carry over from MatLab
     if(times_100):data = data * 100
 
-    #Todo add convar_algo capability
+    # Print Info about current run
+    if(printers>0):
+        print("------------------------------------------------------")
+        print(f"{'DECONVOLUTION':^60}")
+        print(f"{'Shape of input data:':^40} {np.shape(data)}")
+        if(adapt_lr_bool):  print(f"{'Using adaptive LR':^40}")
+        else:               print(f"{'Using regular LR':^40}")
+
+        if(chunk_t_bool and num_workers>0):
+            # Chunk T, MP on T
+            print(f"{'Chunking T and multiprocessing on T..':^40}")
+            # print(f"{'Number of Workers:':^40} {num_workers}")
+        elif (chunk_t_bool):
+            # Chunk T, no MP
+            print(f"{'Chunking T and no multiprocessing':^40}")
+        elif (not chunk_t_bool and num_workers > 0):
+            # Chunk P, MP on P
+            print(f"{'Chunking P and multiprocessing on P..':^40}")
+            # print(f"{'Number of Workers:':^40} {num_workers}")
+        else:
+            print(f"{'No Chunks, no multiprocessing.':^40}")
+
+
+    #-----------------------------------
+    # STARTING DECONV
 
     # Creating convar function with prefilled arguments (so Pool.map can be used)
-    lambda_convar = partial(__convar_arg_reorganizer, gamma, best_lambda, convar_num_iters, convar_mode, convar_algo)
+    lambda_convar = partial(__convar_arg_reorganizer, gamma, best_lambda, convar_num_iters, adapt_lr_bool, convar_algo, convar_earlystop_metric, convar_earlystop_threshold, workers_printers)
+
+    #Todo add convar_algo capability
 
     start = time.time()
-    if(chunk_mode.lower() == "t"):
+    if(chunk_t_bool and num_workers>0):
         # Chunk T, MP on T
-
-        data_list = helpers.chunk_list_axis0(data, mode=chunk_size_mode, chunk_size=chunk_size)
+        num_loops = ceil(np.shape(data)[0] / chunk_size)
+        data_list = []
+        # Create list of data for MP
+        for i in range(0, num_loops):
+            if (i == 0):
+                data_list.append(data[(i * chunk_size): (i + 1) * chunk_size, :])
+                continue
+            data_list.append(data[(i * chunk_size) - chunk_overlap: (i + 1) * chunk_size, :])
+        # MP
         with Pool(num_workers) as p:
-            results = p.map(lambda_convar, data_list)
-            # results = p.apply_async(__convar_spawner, range(0,10))
-        #Todo (if t chunking is needed): Stitching results
+            results = np.array(p.map(lambda_convar, data_list), dtype=object)
 
-    elif(chunk_mode.lower() == "p"):
+        # Unpack and stitch results together
+        c = 0
+        for x in results:
+            if(c == 0):
+                r_final = x[0]
+                c += 1
+                continue
+            r_final = np.concatenate((r_final, x[0][chunk_overlap - 1:]), axis=0)
+            c += 1
+
+    elif(chunk_t_bool):
+        # Chunk T, no MP
+        num_loops = ceil(np.shape(data)[0] / chunk_size)
+        for i in range(0, num_loops):
+            if (i == 0):
+                chunked_r, _, _ = lambda_convar(data[(i * chunk_size): (i + 1) * chunk_size, :])
+                continue
+            temp_r, _, _ = lambda_convar(data[(i * chunk_size) - chunk_overlap: (i + 1) * chunk_size, :])
+            chunked_r = np.concatenate((chunked_r, temp_r[chunk_overlap - 1:]))
+        r_final = chunked_r
+
+    elif(not chunk_t_bool and num_workers>0):
         # Chunk P, MP on P
-
-        # Force number of chunks to be 16 or 8 (Good Number for MP)
-        data_list = helpers.chunk_list_axis1(data, num_chunks=8)
+        data_list = helpers.chunk_list_axis1(data, num_chunks=num_workers)
+        # MP
         with Pool(num_workers) as p:
-            results = p.map(lambda_convar, data_list)
+            # Have to cast manually and pick dtype=object because numpy deprecated (or plans to deprecate) uneven chunks in np.arrays
+            results = np.array(p.map(lambda_convar, data_list), dtype=object)
 
+        # Unpack and stitch results together
+        c = 0
+        for x in results:
+            if(c == 0):
+                r_final = x[0]
+                c += 1
+                continue
+            r_final = np.concatenate((r_final, x[0]), axis=1)
+            c += 1
 
     else:
+        # No Chunks, no MP
         r_final,r1,beta_0 = lambda_convar(data)
 
     end = time.time()
 
-    if(printers):
+    if(printers > 0):
         print("------------------------------------------------------")
         print("------------------------------------------------------")
-        print("All Convars time:", end - start)
+        print(f"{'Time taken:':^40} {round(end - start, 2)}s")
+        print("------------------------------------------------------")
 
-    return #r_final,r1,beta_0
+    return r_final,r1,beta_0
 
-
-
-def __convar_arg_reorganizer(gamma, _lambda, num_iters, convar_mode, convar_algo, data):
+def __convar_arg_reorganizer(gamma, _lambda, num_iters, adapt_lr_bool, convar_algo, early_stop_metric_f, early_stop_threshold, printers, data):
     """Needed for functool.partials (maybe?).. Else I'll use lambdas.."""
-    if(convar_mode == "standard"):
-        return convar.convar_np(data, gamma, _lambda, num_iters=num_iters)
-    if(convar_mode == "adapt"):
-        return convar.convar_np(data, gamma, _lambda, num_iters=num_iters, adapt_lr_bool=True)
+    return convar.convar_np(data, gamma, _lambda, num_iters=num_iters, adapt_lr_bool=adapt_lr_bool, early_stop_metric_f=early_stop_metric_f, early_stop_threshold=early_stop_threshold, printers=printers)
 
-
-def __convar_spawner(x):
-    """Private function that handles splitting P for Multiprocessing Pools"""
-    #Todo: make pools be able to spawn in pools with global process limit
-    print("Spawning..")
-    # with Pool(8) as p:
-        # results = p.map(__testo, range(0,, 10))
+def fit_gamma(new_frame_rate):
+    #gamma               - calcium decay rate (single neuron, based on 40Hz measurments in Gcamp6f mice)
+    gamma = 0.97
+    ratio = new_frame_rate / 40
+    return 1 - (1 - gamma) / ratio
