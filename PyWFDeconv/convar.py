@@ -23,8 +23,8 @@ def convar_np(
     init_out_matrix_method="firdif", init_output_mat=None,
     early_stop_bool=True, early_stop_metric_f=None, early_stop_threshold=None, return_stop_iter=False,
     num_iters=10000,
-    adapt_lr_bool=False, gradient_rollback=False,
-    printers=True
+    adapt_lr_bool=False, gradient_rollback=False, instant_lr_boost=True,
+    printers=True, return_metric_gradients=False
         ):
     """
         convar is a straight translation from matlab into numpy with some additional features.
@@ -34,6 +34,7 @@ def convar_np(
     if(early_stop_threshold==None):
         early_stop_threshold = 0.00003
         # early_stop_threshold = 0.00001            # Used this before normalizing input data in wfd.deconvolve
+        # early_stop_threshold = 0.000001            # For plot_gradient_improvements
     if(early_stop_metric_f==None):
         early_stop_metric_f = early_stops.mean_abs
 
@@ -72,7 +73,7 @@ def convar_np(
     s_start = s
 
     # Adaptive LR, increase right away -Amon
-    if (adapt_lr_bool):
+    if (adapt_lr_bool and instant_lr_boost):
         # Start with a higher lr
         if (0.1 <= _lambda <= 1):
             s = s * helpers.scale_to(_lambda, 4, 1.5, 1, 0.1)
@@ -108,6 +109,7 @@ def convar_np(
     metric_gradient_prev_i = 0
     metric_gradient_bigger_counter = 0
     rollback_counter = 0
+    metric_gradient_list = []
 
     timer = 0
     # deconvolution
@@ -130,9 +132,13 @@ def convar_np(
         if(adapt_lr_bool):
             # Using this because adapt_lr modifies s. That means the gradient is smaller/bigger because of the modified lr (s). We have to take an invariant s. -Amon
             true_scaling_gradient = s_start * At_tmAr - s_start * _lambda * Zr
+            metric_gradient_i = early_stop_metric_f(true_scaling_gradient)
+            # Whenever we want to use gradients (for plots or such)
+            if(return_metric_gradients):
+                metric_gradient_list.append(metric_gradient_i)
 
             # Early Stop -Amon
-            if (early_stop_bool and early_stop_metric_f(true_scaling_gradient) < early_stop_threshold):
+            if (early_stop_bool and metric_gradient_i < early_stop_threshold):
                 early_stopped_at = i
                 did_we_early_stop = True
 
@@ -144,7 +150,7 @@ def convar_np(
                 break
 
 
-        if (not gradient_rollback):
+        if(not gradient_rollback):
             # Calc Gradient -Amon
             gradient = s * At_tmAr - s * _lambda * Zr
 
@@ -156,14 +162,15 @@ def convar_np(
 
         if(adapt_lr_bool):
             # Gradient Comparison -Amon
-            metric_gradient_i = early_stop_metric_f(true_scaling_gradient)
+            # Adapt LR
             if(i > 0):
                 # if(metric_gradient_i > (metric_gradient_prev_i + 0.01 * metric_gradient_prev_i)):
                 if(metric_gradient_i > (metric_gradient_prev_i)):
                     # Current gradient bigger than last one, BAD devolopment, decrease LR
                     # s = (s + s_start) / 2
-                    s *= 0.95
-                    # s *= 0.1
+                    # Decrease factor, previously 0.95
+                    s *= 0.9
+                    # s *= 0.95
 
                     # Rollback r
                     # print("Rolling back..")
@@ -187,15 +194,22 @@ def convar_np(
                         r = x
                         r[r < 0] = 0
                         r[0] = x[0]
+                    # Increase factor
                     s *= 1.01
                     # s *= 4
 
 
         # # NoAdaptLr Early Stop -Amon
-        if((not adapt_lr_bool) and early_stop_bool and (early_stop_metric_f(gradient) < early_stop_threshold)):
-            early_stopped_at = i
-            did_we_early_stop = True
-            break
+        if(not adapt_lr_bool):
+            metric_gradient_i = early_stop_metric_f(gradient)
+            # Whenever we want to use gradients (for plots or such)
+            if(return_metric_gradients):
+                metric_gradient_list.append(metric_gradient_i)
+
+            if(early_stop_bool and (metric_gradient_i < early_stop_threshold)):
+                early_stopped_at = i
+                did_we_early_stop = True
+                break
 
         # Gradient Comparison -Amon
         if(adapt_lr_bool):
@@ -229,6 +243,8 @@ def convar_np(
 
     if(return_stop_iter):
         return r_final,r1,beta_0, early_stopped_at
+    elif(return_metric_gradients):
+        return r_final,r1,beta_0, metric_gradient_list
     else:
         return r_final,r1,beta_0
 

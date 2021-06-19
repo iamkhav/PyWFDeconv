@@ -3,13 +3,17 @@ import PyWFDeconv.plot_deconv_testingAndPlots as deconv_testingAndPlots
 import PyWFDeconv.firdif as firdif
 import PyWFDeconv.convar as convar
 import PyWFDeconv.helpers as helpers
-import PyWFDeconv.plot_code_excerpts as plot_code_excerpts
 # import PyWFDeconv.convar_deprecated as convar_deprecated
+import PyWFDeconv.early_stops as early_stops
+
+# Plots
+import PyWFDeconv.plot_lineperline_convar as plot_lineperline_convar
 import PyWFDeconv.plot_matmul_complexity as plot_matmul_complexity
 import PyWFDeconv.plot_slicedT_vs_regular as plot_slicedT_vs_regular
 import PyWFDeconv.plot_normalized_vs_regular as plot_normalized_vs_regular
 import PyWFDeconv.plot_generic_functions as plot_generic_functions
-import PyWFDeconv.early_stops as early_stops
+import PyWFDeconv.plot_code_excerpts as plot_code_excerpts
+import PyWFDeconv.plot_gradient_improvements as plot_gradient_improvements
 
 import PyWFDeconv as wfd
 
@@ -169,13 +173,14 @@ if __name__ == '__main__':
         """Plot functions"""
 
         # Data import
-        # Merav
+        # Merav 400x50
         data_import = loadmat(example_data_path)
         cal_data = data_import["cal_data"]
-        # Jonas
+
+        # Jonas 400x10334
         npz_file = np.load(npz_path)
         data = npz_file["data"]
-        data = data[:, :1000]
+        data = data[:, :]
 
         ## Matmul runtimes with scaled T
         # plot_matmul_complexity.plot_or_bench_matmul_runtime()
@@ -184,10 +189,26 @@ if __name__ == '__main__':
         # plot_matmul_complexity.plot_or_bench_convar_runtimes()
 
         ## Convar normalized input data vs regular
-        plot_normalized_vs_regular.compare_normalized_vs_regular(cal_data)
+        # plot_normalized_vs_regular.compare_normalized_vs_regular(cal_data)
 
         # Sliced T vs regular
         # plot_slicedT_vs_regular.compare_slice_vs_regular(data)
+
+        # Print dirac * calcium
+        # plot_code_excerpts.dirac_calcium_conv()
+
+        # Line per Line timings
+        # plot_lineperline_convar.convar_np_at(data, 0.97, 1)
+
+        # Show Gradient with sequentially added features
+        # plot_gradient_improvements.show_plots(1)
+        # plot_code_excerpts.meanGradient_over_t(cal_data, 0.97, 1) # OLD WAY OF DOING IT
+
+        # Show divergence
+        # plot_gradient_improvements.divergence_example(0)
+
+        # Test fuer Matthias Kaschube
+        plot_generic_functions.plot_every_trace_every_way_and_save(helpers.normalize_1_0(data))
 
     if(mode == 10):
         """Main Function using Wrappers"""
@@ -203,12 +224,13 @@ if __name__ == '__main__':
 
         # 2. Determine which lambda yields best results
         # lambda_list = wfd.generate_lambda_list(0.5,4,0.1)
-        best_lambda = wfd.find_best_lambda(data[:200, :1000], gamma=0.92, convar_num_iters=2000, adapt_lr_bool=True, num_workers=0)        # Jonas data, Gamma adjusted
+        # best_lambda = wfd.find_best_lambda(data[:200, :1000], gamma=0.92, convar_num_iters=2000, adapt_lr_bool=True, num_workers=0)        # Jonas data, Gamma adjusted
         # best_lambda = wfd.find_best_lambda(data[:200, :1000], gamma=0.92, convar_num_iters=2000, adapt_lr_bool=True, binary_seach_find=True, all_lambda=lambda_list)
 
         # 3. Deconvolve using best lambda
-        deconvolved, _, _ = wfd.deconvolve(data[:, :], gamma=0.92, best_lambda=5, adapt_lr_bool=True, num_workers=0, convar_earlystop_threshold=0.0000001)
+        deconvolved, _, _ = wfd.deconvolve(data[:, :], gamma=0.92, best_lambda=5, adapt_lr_bool=True, num_workers=8, convar_earlystop_threshold=0.000001, printers=2)
 
+        # _,_,_ = firdif.firdif_np(data, gamma=0.92, smt=3)
 
 
     # np.show_config()

@@ -122,7 +122,7 @@ def generate_lambda_list(start_range, end_range, increment):
 
 def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_100=False, normalize=True,
                      adapt_lr_bool=True, convar_algo="numpy", convar_num_iters=2000, early_stop_bool=False,
-                     binary_seach_find=False,
+                     binary_seach_find_bool=False,
                      printers=1):
     """Docstring"""
 
@@ -132,7 +132,7 @@ def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_
         print(f"{'Shape of input data:':^40} {np.shape(data)}")
         if(adapt_lr_bool):  print(f"{'Using adaptive LR':^40}")
         else:               print(f"{'Using regular LR':^40}")
-        if(binary_seach_find):
+        if(binary_seach_find_bool):
             print(f"{'Using Binary Search Method':^40}")
             print(f"{'(Make sure you have even spacing in Lambda List..)':^40}")
 
@@ -165,11 +165,11 @@ def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_
     partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, adapt_lr_bool=adapt_lr_bool, printers=workers_printers)
 
     start = time.time()
-    if(not binary_seach_find):
+    if(not binary_seach_find_bool):
         # Go through all lambdas
         best_lambda_convar, min_error_convar, _ = __do_work_best_lambda(partial_f, data, gamma, all_lambda, num_workers, printers)
 
-    if (binary_seach_find):
+    if (binary_seach_find_bool):
         #Todo check for non-evenly spaced input_lambda_list
 
         # Binary Search Style Lambda Search

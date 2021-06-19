@@ -50,6 +50,8 @@ def biggest_pos_neg_sum_threshold(gradient, threshold=0.0003):
     if(curr_bigpos + np.abs(curr_bigneg) < threshold):
         return True
 
+def abs_mean(gradient):
+    return np.abs(np.mean(gradient))
 
 def mean_abs(gradient):
     return np.mean(np.abs(gradient))

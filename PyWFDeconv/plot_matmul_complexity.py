@@ -10,6 +10,7 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from matplotlib import cm
 from . import convar as convar
 from scipy import linalg
 
@@ -356,6 +357,7 @@ def plot_or_bench_matmul_runtime():
 
 def plot_or_bench_convar_runtimes():
     gamma = 0.97
+    plot = 2
     # Mid | Full
     """NOT USED"""
     # Using scipy Algos
@@ -391,28 +393,30 @@ def plot_or_bench_convar_runtimes():
 
     # convar.convar_np(data, gamma, 1, early_stop_bool=False, num_iters=5000)
 
-    # Plot
-    plt.rcParams.update({'font.size': 13})
-    plt.rcParams["figure.figsize"] = (8, 6)
-    fig, ax = plt.subplots()
 
-    benches = [0.132, 0.534, 0.906, 1.432, 3.48, 10.18, 34.6, 132.6, 686, 3710]
-    x_ticks = ["25", "50", "100", "200", "400", "800", "1600", "3200", "6400", "12800"]
-    ranger = [25,50,100,200,400, 800, 1600, 3200, 6400, 12800]
-    plt.xticks(ranger,x_ticks, rotation=90)
+    # Plot 1
+    if(plot == 1):
+        plt.rcParams.update({'font.size': 13})
+        plt.rcParams["figure.figsize"] = (8, 6)
+        fig, ax = plt.subplots()
 
-    # ax.set_yscale("log", base=2)
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(22))
+        benches = [0.132, 0.534, 0.906, 1.432, 3.48, 10.18, 34.6, 132.6, 686, 3710]
+        x_ticks = ["25", "50", "100", "200", "400", "800", "1600", "3200", "6400", "12800"]
+        ranger = [25,50,100,200,400, 800, 1600, 3200, 6400, 12800]
+        plt.xticks(ranger,x_ticks, rotation=90)
 
-    # plt.plot(ranger, benches, color="r")
-    ax.plot(ranger, benches, color="r")
-    # plt.semilogy(ranger,benches, base=2)
-    plt.title(f"Regular Convar scipy runtime: Static P=400, Iters=1000, scaling T")
-    plt.ylabel("Time [s]")
-    plt.xlabel("T")
-    plt.tight_layout()
-    plt.show()
-    plt.close()
+        # ax.set_yscale("log", base=2)
+        # ax.yaxis.set_major_locator(ticker.MultipleLocator(22))
+
+        # plt.plot(ranger, benches, color="r")
+        ax.plot(ranger, benches, color="r")
+        # plt.semilogy(ranger,benches, base=2)
+        plt.title(f"Regular Convar scipy runtime: Static P=400, Iters=1000, scaling T")
+        plt.ylabel("Time [s]")
+        plt.xlabel("T")
+        plt.tight_layout()
+        plt.show()
+        plt.close()
 
 
     # Using convar_slim, 1 thread
@@ -429,54 +433,65 @@ def plot_or_bench_convar_runtimes():
     # data = np.random.rand(12800, 400)                 # 58.72 | 90.3 | from 5 iters, multiplied by 200: (90.3 - 58.72) * 200 =
     # convar_slim(data, gamma, 1, num_iters=5000)
 
-    # Plot
-    plt.rcParams.update({'font.size': 13})
-    plt.rcParams["figure.figsize"] = (8, 6)
-    fig, ax = plt.subplots()
+    # Plot 2 Convar slim, no MP
+    if(plot==2):
+        plt.rcParams.update({'font.size': 13})
+        plt.rcParams["figure.figsize"] = (8, 6)
+        fig, ax = plt.subplots()
 
-    benches = [0.14, 0.268, 0.552, 1.44, 5.02, 19.72, 74.3, 299.5, 1370, 6316]
-    x_ticks = ["25", "50", "100", "200", "400", "800", "1600", "3200", "6400", "12800"]
-    ranger = [25,50,100,200,400, 800, 1600, 3200, 6400, 12800]
-    plt.xticks(ranger,x_ticks, rotation=90)
+        benches = [0.14, 0.268, 0.552, 1.44, 5.02, 19.72, 74.3, 299.5, 1370, 6316]
+        x_ticks = ["", "", "", "", "400", "800", "1600", "3200", "6400", "12800"]
+        ranger = [25,50,100,200,400, 800, 1600, 3200, 6400, 12800]
+        plt.xticks(ranger,x_ticks, rotation=90)
 
-    # ax.set_yscale("log", base=2)
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(22))
+        ax.set_yscale("log", base=10)
+        ax.set_xscale("log", base=10)
+        # ax.yaxis.set_major_locator(ticker.MultipleLocator(22))
 
-    # plt.plot(ranger, benches, color="r")
-    ax.plot(ranger, benches, color="r")
-    # plt.semilogy(ranger,benches, base=2)
-    plt.title(f"Convar scipy no multi, slim runtime: Static P=400, Iters=1000, scaling T")
-    plt.ylabel("Time [s]")
-    plt.xlabel("T")
-    plt.tight_layout()
-    plt.show()
-    plt.close()
+        # Approximate chunk time
+        chunk_approx_400 = [None, None, None, None, 5.02, 5.02*2, 5.02*4, 5.02*8, 5.02*16, 5.02*32]
+        chunk_approx_1600 = [None, None, None, None, None, None, 74.3, 74.3*2, 74.3*4, 74.3*8]
 
+        # plt.plot(ranger, benches, color="r")
+        ax.plot(ranger, benches, label="Regular")
+        ax.plot(ranger, chunk_approx_1600,  label="T=1600 chunks")
+        ax.plot(ranger, chunk_approx_400, label="T=400 chunks")
 
-    # Plot both
-    plt.rcParams.update({'font.size': 13})
-    plt.rcParams["figure.figsize"] = (8, 6)
-    fig, ax = plt.subplots()
+        # plt.semilogy(ranger,benches, base=2)
+        plt.title(f"Convar (no MP): \nP=400, Iters=1000")
+        # plt.title(f"Convar scipy no multi, slim runtime: Static P=400, Iters=1000, scaling T")
+        plt.ylabel("Time [s]")
+        plt.xlabel("T")
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+        plt.close()
 
-    benches_reg = [0.132, 0.534, 0.906, 1.432, 3.48, 10.18, 34.6, 132.6, 686, 3710]
-    benches_slim = [0.14, 0.268, 0.552, 1.44, 5.02, 19.72, 74.3, 299.5, 1370, 6316]
-    x_ticks = ["25", "50", "100", "200", "400", "800", "1600", "3200", "6400", "12800"]
-    ranger = [25,50,100,200,400, 800, 1600, 3200, 6400, 12800]
-    plt.xticks(ranger,x_ticks, rotation=90)
+    if(plot == 3):
+        # Plot 3 both
+        plt.rcParams.update({'font.size': 13})
+        plt.rcParams["figure.figsize"] = (8, 6)
+        fig, ax = plt.subplots()
 
-    ax.set_yscale("log", base=10)
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(22))
+        benches_reg = [0.132, 0.534, 0.906, 1.432, 3.48, 10.18, 34.6, 132.6, 686, 3710]
+        benches_slim = [0.14, 0.268, 0.552, 1.44, 5.02, 19.72, 74.3, 299.5, 1370, 6316]
+        x_ticks = ["25", "50", "100", "200", "400", "800", "1600", "3200", "6400", "12800"]
+        ranger = [25,50,100,200,400, 800, 1600, 3200, 6400, 12800]
+        plt.xticks(ranger,x_ticks, rotation=90)
 
-    ax.plot(ranger, benches_reg, color="r", label="Regular")
-    ax.plot(ranger, benches_slim, color="b", label="No multi, slim")
-    # plt.semilogy(ranger,benches, base=2)
-    plt.title(f"Convar scipy: Static P=400, Iters=1000, scaling T")
-    plt.ylabel("Time [s]")
-    plt.xlabel("T")
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-    plt.close()
+        ax.set_yscale("log", base=10)
+        # ax.yaxis.set_major_locator(ticker.MultipleLocator(22))
+
+        ax.plot(ranger, benches_reg, color="r", label="Regular")
+        ax.plot(ranger, benches_slim, color="b", label="No multi, slim")
+        # plt.semilogy(ranger,benches, base=2)
+        plt.title(f"Convar scipy: Static P=400, Iters=1000, scaling T")
+        plt.ylabel("Time [s]")
+        plt.xlabel("T")
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+        plt.close()
 
 
     # Using convar_own
