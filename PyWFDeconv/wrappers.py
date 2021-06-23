@@ -39,8 +39,6 @@ adapt_lr_bool       - True|False
                     - False  = One conventional run with early Stop activated, First Difference method for output matrix init and standard LR
                     - True     = Using Adaptive LR
                     
-convar_algo         - "numpy"|"scipyBLAS"|"halftorch"|"torchCUDA"
-
 convar_num_iters    - number of iterations for convar to run 
 
 early_stop_bool     - Sets Early Stop function for convar
@@ -282,8 +280,6 @@ adapt_lr_bool       - True|False
                     - False  = One conventional run with early Stop activated, First Difference method for output matrix init and standard LR
                     - True     = Using Adaptive LR
                     
-convar_algo         - "numpy"|"scipyBLAS"|"halftorch"|"torchCUDA"
-
 convar_num_iters    - number of iterations for convar to run 
 
 """
@@ -292,7 +288,7 @@ def deconvolve(
     data, gamma=0.97, best_lambda=1, times_100=False, normalize=True,
     num_workers=None,
     chunk_t_bool=False, chunk_size=100, chunk_overlap=10,
-    adapt_lr_bool=True, convar_algo="", convar_num_iters=10000, convar_earlystop_metric=None, convar_earlystop_threshold=None,
+    adapt_lr_bool=True, convar_num_iters=10000, convar_earlystop_metric=None, convar_earlystop_threshold=None,
     printers=1):
     """Docstring"""
 
@@ -344,7 +340,7 @@ def deconvolve(
     # STARTING DECONV
 
     # Creating convar function with prefilled arguments (so Pool.map can be used)
-    lambda_convar = partial(__convar_arg_reorganizer, gamma, best_lambda, convar_num_iters, adapt_lr_bool, convar_algo, convar_earlystop_metric, convar_earlystop_threshold, workers_printers)
+    lambda_convar = partial(__convar_arg_reorganizer, gamma, best_lambda, convar_num_iters, adapt_lr_bool, convar_earlystop_metric, convar_earlystop_threshold, workers_printers)
 
     #Todo add convar_algo capability
 
@@ -416,7 +412,7 @@ def deconvolve(
 
     return r_final,r1,beta_0
 
-def __convar_arg_reorganizer(gamma, _lambda, num_iters, adapt_lr_bool, convar_algo, early_stop_metric_f, early_stop_threshold, printers, data):
+def __convar_arg_reorganizer(gamma, _lambda, num_iters, adapt_lr_bool, early_stop_metric_f, early_stop_threshold, printers, data):
     """Needed for functool.partials (maybe?).. Else I'll use lambdas.."""
     return convar.convar_np(data, gamma, _lambda, num_iters=num_iters, adapt_lr_bool=adapt_lr_bool, early_stop_metric_f=early_stop_metric_f, early_stop_threshold=early_stop_threshold, printers=printers)
 

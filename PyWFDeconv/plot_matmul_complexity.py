@@ -435,37 +435,102 @@ def plot_or_bench_convar_runtimes():
 
     # Plot 2 Convar slim, no MP
     if(plot==2):
-        plt.rcParams.update({'font.size': 13})
-        plt.rcParams["figure.figsize"] = (8, 6)
-        fig, ax = plt.subplots()
+        # plt.rcParams.update({'font.size': 13})
+        # plt.rcParams["figure.figsize"] = (8, 6)
+        # fig, ax = plt.subplots()
+        #
+        # benches = [0.14, 0.268, 0.552, 1.44, 5.02, 19.72, 74.3, 299.5, 1370, 6316]
+        # x_ticks = ["", "", "", "", "400", "800", "1600", "3200", "6400", "12800"]
+        # ranger = [25,50,100,200,400, 800, 1600, 3200, 6400, 12800]
+        # plt.xticks(ranger,x_ticks, rotation=90)
+        #
+        # ax.set_yscale("log", base=10)
+        # ax.set_xscale("log", base=10)
+        # # ax.yaxis.set_major_locator(ticker.MultipleLocator(22))
+        #
+        # # Approximate chunk time
+        # chunk_approx_400 = [None, None, None, None, 5.02, 5.02*2, 5.02*4, 5.02*8, 5.02*16, 5.02*32]
+        # chunk_approx_1600 = [None, None, None, None, None, None, 74.3, 74.3*2, 74.3*4, 74.3*8]
+        #
+        # # plt.plot(ranger, benches, color="r")
+        # ax.plot(ranger, benches, label="Regular")
+        # ax.plot(ranger, chunk_approx_1600,  label="T=1600 chunks")
+        # ax.plot(ranger, chunk_approx_400, label="T=400 chunks")
+        #
+        # # plt.semilogy(ranger,benches, base=2)
+        # plt.title(f"Convar (no MP): \nP=400, Iters=1000")
+        # # plt.title(f"Convar scipy no multi, slim runtime: Static P=400, Iters=1000, scaling T")
+        # plt.ylabel("Time [s]")
+        # plt.xlabel("T")
+        # plt.legend()
+        # plt.tight_layout()
+        # plt.show()
+        # plt.close()
+        p="both"
+        """ BACHELOR THESIS VERSION """
+        if(p=="loglog"):
+            plt.rcParams.update({'font.size': 14})
+            plt.rcParams["figure.figsize"] = (6, 5)
+            fig, ax = plt.subplots()
 
-        benches = [0.14, 0.268, 0.552, 1.44, 5.02, 19.72, 74.3, 299.5, 1370, 6316]
-        x_ticks = ["", "", "", "", "400", "800", "1600", "3200", "6400", "12800"]
-        ranger = [25,50,100,200,400, 800, 1600, 3200, 6400, 12800]
-        plt.xticks(ranger,x_ticks, rotation=90)
+            benches = [0.14, 0.268, 0.552, 1.44, 5.02, 19.72, 74.3, 299.5, 1370, 6316]
+            x_ticks = ["", "", "", "", "400", "800", "1600", "3200", "6400", "12800"]
+            ranger = [25,50,100,200,400, 800, 1600, 3200, 6400, 12800]
+            plt.xticks(ranger,x_ticks, rotation=90)
 
-        ax.set_yscale("log", base=10)
-        ax.set_xscale("log", base=10)
-        # ax.yaxis.set_major_locator(ticker.MultipleLocator(22))
+            ax.set_yscale("log", base=10)
+            ax.set_xscale("log", base=10)
+            # ax.yaxis.set_major_locator(ticker.MultipleLocator(22))
 
-        # Approximate chunk time
-        chunk_approx_400 = [None, None, None, None, 5.02, 5.02*2, 5.02*4, 5.02*8, 5.02*16, 5.02*32]
-        chunk_approx_1600 = [None, None, None, None, None, None, 74.3, 74.3*2, 74.3*4, 74.3*8]
+            # Approximate chunk time
+            chunk_approx_400 = [None, None, None, None, 5.02, 5.02*2, 5.02*4, 5.02*8, 5.02*16, 5.02*32]
+            chunk_approx_1600 = [None, None, None, None, None, None, 74.3, 74.3*2, 74.3*4, 74.3*8]
 
-        # plt.plot(ranger, benches, color="r")
-        ax.plot(ranger, benches, label="Regular")
-        ax.plot(ranger, chunk_approx_1600,  label="T=1600 chunks")
-        ax.plot(ranger, chunk_approx_400, label="T=400 chunks")
+            # plt.plot(ranger, benches, color="r")
+            ax.plot(ranger, benches, label="Regular")
+            # ax.plot(ranger, chunk_approx_1600,  label="T=1600 chunks")
+            # ax.plot(ranger, chunk_approx_400, label="T=400 chunks")
 
-        # plt.semilogy(ranger,benches, base=2)
-        plt.title(f"Convar (no MP): \nP=400, Iters=1000")
-        # plt.title(f"Convar scipy no multi, slim runtime: Static P=400, Iters=1000, scaling T")
-        plt.ylabel("Time [s]")
-        plt.xlabel("T")
-        plt.legend()
-        plt.tight_layout()
-        plt.show()
-        plt.close()
+            # plt.semilogy(ranger,benches, base=2)
+            # plt.title(f"Convar (no MP): \nP=400, Iters=1000")
+            # plt.title(f"Convar scipy no multi, slim runtime: Static P=400, Iters=1000, scaling T")
+            plt.ylabel("Time [s]")
+            plt.xlabel("$T$")
+            # plt.legend()
+            plt.tight_layout()
+            plt.show()
+            plt.close()
+        if(p=="both"):
+            plt.rcParams.update({'font.size': 14})
+            plt.rcParams["figure.figsize"] = (6, 5)
+            fig, ax = plt.subplots()
+
+            benches = [0.14, 0.268, 0.552, 1.44, 5.02, 19.72, 74.3, 299.5, 1370, 6316]
+            x_ticks = ["", "", "", "", "", "800", "1600", "3200", "6400", "12800"]
+            ranger = [25,50,100,200,400, 800, 1600, 3200, 6400, 12800]
+            plt.xticks(ranger,x_ticks, rotation=90)
+
+            # ax.set_yscale("log", base=10)
+            # ax.set_xscale("log", base=10)
+            # ax.yaxis.set_major_locator(ticker.MultipleLocator(22))
+
+            # Approximate chunk time
+            chunk_approx_400 = [None, None, None, None, 5.02, 5.02*2, 5.02*4, 5.02*8, 5.02*16, 5.02*32]
+            chunk_approx_1600 = [None, None, None, None, None, None, 74.3, 74.3*2, 74.3*4, 74.3*8]
+
+            # plt.plot(ranger, benches, color="r")
+            ax.plot(ranger, benches, label="No chunks")
+            ax.plot(ranger, chunk_approx_1600,  label="T=1600 chunks")
+            ax.plot(ranger, chunk_approx_400, label="T=400 chunks")
+
+            # plt.title(f"Convar (no MP): \nP=400, Iters=1000")
+            # plt.title(f"Convar scipy no multi, slim runtime: Static P=400, Iters=1000, scaling T")
+            plt.ylabel("Time [s]")
+            plt.xlabel("$T$")
+            plt.legend()
+            plt.tight_layout()
+            plt.show()
+            plt.close()
 
     if(plot == 3):
         # Plot 3 both

@@ -62,7 +62,7 @@ You should monitor CPU load % while using a single worker to see how a single co
 # torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
-    mode = 10
+    mode = 7
     print(f"Launching program.. at {datetime.datetime.now()}")
 
     if(mode == 1):
@@ -193,6 +193,7 @@ if __name__ == '__main__':
 
         # Sliced T vs regular
         # plot_slicedT_vs_regular.compare_slice_vs_regular(data)
+        plot_slicedT_vs_regular.thesis_overlap_comparison()
 
         # Print dirac * calcium
         # plot_code_excerpts.dirac_calcium_conv()
@@ -208,7 +209,7 @@ if __name__ == '__main__':
         # plot_gradient_improvements.divergence_example(0)
 
         # Test fuer Matthias Kaschube
-        plot_generic_functions.plot_every_trace_every_way_and_save(helpers.normalize_1_0(data))
+        # plot_generic_functions.plot_every_trace_every_way_and_save(helpers.normalize_1_0(data))
 
     if(mode == 10):
         """Main Function using Wrappers"""

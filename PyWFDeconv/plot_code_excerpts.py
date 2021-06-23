@@ -624,7 +624,7 @@ def dirac_calcium_conv():
         dirac += signal.unit_impulse(full_dim, d)
     conved = np.convolve(dirac, calcium)
     noise = np.random.normal(0, 1, size=np.shape(conved)[0])
-    noise = noise / 15
+    noise = noise / 12
     conved_with_noise = conved + noise
 
 
@@ -672,22 +672,22 @@ def dirac_calcium_conv():
     # plt.show()
     # plt.close()
 
-    # # Plot 3b Conved with Dirac
-    plt.rcParams.update({'font.size': 13})
-    plt.rcParams["figure.figsize"] = (8, 6)
-    plt.title("spikes(x) * calc_decay_40hz(x)")
-    # Delta function
-    # for x in spike_list:
-    #     plt.plot([x, x], [0, 1], color="m")
-    for xc in spike_list:
-        plt.axvline(x=xc, color='orange', linestyle='--', alpha=0.65)
-    # Conved
-    plt.plot(conved)
-    plt.ylabel("Modelled Fluorescence")
-    plt.xlabel("t")
-    plt.tight_layout()
-    plt.show()
-    plt.close()
+    # # # Plot 3b Conved with Dirac
+    # plt.rcParams.update({'font.size': 13})
+    # plt.rcParams["figure.figsize"] = (8, 6)
+    # plt.title("spikes(t) * calc_decay_40hz(t)")
+    # # Delta function
+    # # for x in spike_list:
+    # #     plt.plot([x, x], [0, 1], color="m")
+    # for xc in spike_list:
+    #     plt.axvline(x=xc, color='orange', linestyle='--', alpha=0.65)
+    # # Conved
+    # plt.plot(conved)
+    # plt.ylabel("Modelled Fluorescence")
+    # plt.xlabel("t")
+    # plt.tight_layout()
+    # plt.show()
+    # plt.close()
 
     # # Plot 4 Conved with noise
     # plt.rcParams.update({'font.size': 13})
@@ -713,7 +713,7 @@ def dirac_calcium_conv():
     # plt.show()
     # plt.close()
 
-    # Plot 6 Single Dirac
+    ## Plot 6 Single Dirac
     # full_dim = 10
     # spike_list = [0]
     # dirac = np.empty((full_dim))
@@ -739,3 +739,109 @@ def dirac_calcium_conv():
     # plt.tight_layout()
     # plt.show()
     # plt.close()
+
+
+
+
+    """ BACHELOR THESIS PLOTS """
+    # # Plot 2 Calcium
+    # plt.rcParams.update({'font.size': 14})
+    # plt.rcParams["figure.figsize"] = (5, 4)
+    # plt.plot(calcium)
+    # plt.title("$calc\_decay_{40hz}(t) = 0.97^t$")
+    # plt.ylabel("$y$")
+    # plt.xlabel("$t$")
+    # plt.tight_layout()
+    # plt.show()
+    # plt.close()
+
+    # # Plot 6 Single Dirac
+    # full_dim = 10
+    # spike_list = [0]
+    # dirac = np.empty((full_dim))
+    # for d in spike_list:
+    #     dirac += signal.unit_impulse(full_dim, d)
+    # print(dirac)
+    # plt.rcParams.update({'font.size': 14})
+    # plt.rcParams["figure.figsize"] = (5, 4)
+    # fig, ax = plt.subplots()
+    # plt.plot(dirac, color="tab:blue", linestyle="None", marker="o", markersize=1.0)
+    # plt.plot(dirac, linestyle="None", color="tab:blue", marker="^", markevery=spike_list, markersize=10.0)
+    # # Draw Lines
+    # lines = []
+    # for i in range(0, len(spike_list)):
+    #     pair = [(spike_list[i], 0), (spike_list[i], 1)]
+    #     lines.append(pair)
+    # linecoll = matcoll.LineCollection(lines, color="tab:blue")
+    # ax.add_collection(linecoll)
+    # plt.ylabel("$y$")
+    # plt.xlabel("$t$")
+    # plt.yticks([])
+    # plt.title("$\delta(t)$")
+    # plt.tight_layout()
+    # plt.show()
+    # plt.close()
+
+    # # # Plot 1 Dirac
+    # plt.rcParams.update({'font.size': 14})
+    # plt.rcParams["figure.figsize"] = (5, 4)
+    # fig, ax = plt.subplots()
+    # plt.plot(dirac, color="tab:blue", linestyle="None", marker="o", markersize=1.0)
+    # plt.plot(dirac, linestyle="None", color="tab:blue", marker="^", markevery=spike_list, markersize=10.0)
+    # # Draw Lines
+    # lines = []
+    # for i in range(0, len(spike_list)):
+    #     pair = [(spike_list[i], 0), (spike_list[i], 1)]
+    #     lines.append(pair)
+    # linecoll = matcoll.LineCollection(lines, color="tab:blue")
+    # ax.add_collection(linecoll)
+    #
+    # plt.ylabel("$y$")
+    # plt.xlabel("$t$")
+    # plt.yticks([])
+    # plt.title("$spikes(t)$")
+    # plt.tight_layout()
+    # plt.show()
+    # plt.close()
+
+    # # # # Plot 3 Conved
+    # plt.rcParams.update({'font.size': 14})
+    # plt.rcParams["figure.figsize"] = (5, 4)
+    # plt.title("$spikes(t)\ \circledast\ calc\_decay_{40hz}(t)$")
+    # plt.plot(conved[:65])
+    # plt.ylabel("$Measured\ fluorescence$")
+    # plt.xlabel("$t$")
+    # plt.tight_layout()
+    # plt.show()
+    # plt.close()
+
+    # # # Plot 3b Conved with Dirac
+    # plt.rcParams.update({'font.size': 14})
+    # plt.rcParams["figure.figsize"] = (5, 4)
+    # plt.title("$spikes(t)\ \circledast\ calc\_decay_{40hz}(t)$")
+    # # Delta function
+    # # for x in spike_list:
+    # #     plt.plot([x, x], [0, 1], color="m")
+    # for xc in spike_list:
+    #     plt.axvline(x=xc, color='orange', linestyle='--', alpha=0.65)
+    # # Conved
+    # plt.plot(conved[:65])
+    # plt.ylabel("$Measured\ fluorescence$")
+    # plt.xlabel("$t$")
+    # plt.tight_layout()
+    # plt.show()
+    # plt.close()
+
+    # Plot 4 Conved with noise
+    plt.rcParams.update({'font.size': 14})
+    plt.rcParams["figure.figsize"] = (5, 4)
+    plt.title("$spikes(t)\ \circledast\ calc\_decay_{40hz}(t)\ \circledast\ noise$", fontsize=13)
+    conved_with_noise += np.abs(np.min(conved_with_noise))
+    conved_with_noise[0] = 0
+    plt.plot(conved_with_noise[:65])
+    plt.ylabel("$Measured\ fluorescence$")
+    plt.xlabel("$t$")
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
