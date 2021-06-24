@@ -282,12 +282,14 @@ adapt_lr_bool       - True|False
                     
 convar_num_iters    - number of iterations for convar to run 
 
+Note: Using overlap blend and steal together only makes sense if the blend area is bigger than the steal area since else the blended frames get "stolen". Using one of the two is the better choice (blend imo).
+
 """
 
 def deconvolve(
     data, gamma=0.97, best_lambda=1, times_100=False, normalize=True,
     num_workers=None,
-    chunk_t_bool=False, chunk_size=100, chunk_overlap=10,
+    chunk_t_bool=False, chunk_size=100, chunk_overlap=10, chunk_overlap_steal = 0, chunk_overlap_blend = 0,
     adapt_lr_bool=True, convar_num_iters=10000, convar_earlystop_metric=None, convar_earlystop_threshold=None,
     printers=1):
     """Docstring"""
@@ -298,7 +300,6 @@ def deconvolve(
 
     # Init returns
     r_final,r1,beta_0 = np.empty(0),0,0
-    chunked_r = 0
 
     workers_printers = False
     # Workers Init
@@ -366,7 +367,17 @@ def deconvolve(
                 r_final = x[0]
                 c += 1
                 continue
-            r_final = np.concatenate((r_final, x[0][chunk_overlap - 1:]), axis=0)
+
+            # Overlap blend
+            if(chunk_overlap_blend > 0):
+                r_final[-chunk_overlap_blend:] = (r_final[-chunk_overlap_blend:] + x[0][chunk_overlap - (1 + chunk_overlap_blend): chunk_overlap - 1]) / 2
+
+            if(chunk_overlap_steal > 0):
+                # Overlap steal
+                r_final = np.concatenate((r_final[:-chunk_overlap_steal], x[0][chunk_overlap - (1+chunk_overlap_steal):]), axis=0)
+            else:
+                # Regular chunk concatenation
+                r_final = np.concatenate((r_final, x[0][chunk_overlap - 1:]), axis=0)
             c += 1
 
     elif(chunk_t_bool):
@@ -374,11 +385,20 @@ def deconvolve(
         num_loops = ceil(np.shape(data)[0] / chunk_size)
         for i in range(0, num_loops):
             if (i == 0):
-                chunked_r, _, _ = lambda_convar(data[(i * chunk_size): (i + 1) * chunk_size, :])
+                r_final, _, _ = lambda_convar(data[(i * chunk_size): (i + 1) * chunk_size, :])
                 continue
             temp_r, _, _ = lambda_convar(data[(i * chunk_size) - chunk_overlap: (i + 1) * chunk_size, :])
-            chunked_r = np.concatenate((chunked_r, temp_r[chunk_overlap - 1:]))
-        r_final = chunked_r
+
+            # Overlap blend
+            if(chunk_overlap_blend > 0):
+                r_final[-chunk_overlap_blend:] = (r_final[-chunk_overlap_blend:] + temp_r[chunk_overlap - (1 + chunk_overlap_blend): chunk_overlap - 1]) / 2
+
+            if(chunk_overlap_steal > 0):
+                # Overlap steal
+                r_final = np.concatenate((r_final[:-chunk_overlap_steal], temp_r[chunk_overlap - (1+chunk_overlap_steal):]))
+            else:
+                # Regular chunk concatenation
+                r_final = np.concatenate((r_final, temp_r[chunk_overlap - 1:]))
 
     elif(not chunk_t_bool and num_workers>0):
         # Chunk P, MP on P

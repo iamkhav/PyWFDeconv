@@ -106,10 +106,10 @@ def thesis_overlap_comparison():
     #     chunked_r = np.concatenate((chunked_r, temp_r[overlap - 1:]))
 
     fr, _, _ = wfd.deconvolve(data,0.92,thislambda,num_workers=0)
-    chunked_r, _, _ = wfd.deconvolve(data,0.92,thislambda,chunk_t_bool=True,chunk_size=chunk_size,chunk_overlap=overlap)
-
-    print(np.shape(fr))
-    print(np.shape(chunked_r))
+    chunked_r, _, _ = wfd.deconvolve(data,0.92,thislambda,chunk_t_bool=True,chunk_size=chunk_size,chunk_overlap=overlap,num_workers=0)
+    chunked_blend,_,_ = wfd.deconvolve(data, 0.92, thislambda, chunk_t_bool=True, chunk_size=chunk_size, chunk_overlap=overlap, num_workers=8,
+                                      chunk_overlap_blend=30)
+    chunked_steal,_,_ = wfd.deconvolve(data,0.92,thislambda,chunk_t_bool=True,chunk_size=chunk_size,chunk_overlap=overlap,num_workers=8,chunk_overlap_steal=30)
 
     start_Frame = 10
 
@@ -129,6 +129,16 @@ def thesis_overlap_comparison():
         average_chunked.append(np.mean(i))
     average_chunked = helpers.normalize_1_0(average_chunked)
 
+    average_blend = []
+    for i in chunked_blend[start_Frame:]:
+        average_blend.append(np.mean(i))
+    average_blend = helpers.normalize_1_0(average_blend)
+
+    average_steal = []
+    for i in chunked_steal[start_Frame:]:
+        average_steal.append(np.mean(i))
+    average_steal = helpers.normalize_1_0(average_steal)
+
     # Plot showing averaged spiking rates
     plt.rcParams.update({'font.size': 13})
     plt.rcParams["figure.figsize"] = (8, 6)
@@ -147,7 +157,13 @@ def thesis_overlap_comparison():
 
     # Plot showing difference
     diff = average_nochunk - average_chunked
-    plt.plot(diff)
+    diff_blend = average_nochunk - average_blend
+    diff_steal = average_nochunk - average_steal
+    plt.axhline(y=0, color='m', linestyle=':')
+    plt.plot(diff, label="No Blend")
+    plt.plot(diff_blend, label="Blend")
+    # plt.plot(diff_steal, label="Steal")
+    plt.legend()
     plt.show()
     plt.close()
 
