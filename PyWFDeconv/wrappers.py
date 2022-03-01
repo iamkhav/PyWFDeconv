@@ -6,9 +6,11 @@ from functools import partial
 import time
 from . import (
     helpers,
-    convar
+    convar,
+    firdif
 )
 from math import ceil, floor
+from matplotlib import pyplot as plt
 
 # Original lambdas if the user wants to call and modify them
 original_all_lambda = [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1, 2, 3, 5, 7, 10, 20, 40, 80]
@@ -54,6 +56,7 @@ binary_seach_find   - Uses binary search style algorithm for lambda search..
                     - Cuts down number of Convars called from n to logn
                     - Uses a Cache system that further reduces number of Convars called
 """
+
 
 def __do_work_best_lambda(partial_convar_f, data, gamma, all_lambda, num_workers=1, printers=1):
     """Docstring"""
@@ -103,7 +106,26 @@ def __do_work_best_lambda(partial_convar_f, data, gamma, all_lambda, num_workers
     min_error_convar = np.min(temp)
     best_lambda_convar_indx = np.argmin(temp)
     best_lambda_convar = all_lambda[best_lambda_convar_indx]
-
+    if(False):   # Plot Lambda curve
+        print(temp)
+        for x in range(0,len(temp)):
+            print(temp[x])
+            print(round(all_lambda[x],2))
+            print("---------")
+        plt.rcParams.update({'font.size': 12})
+        plt.rcParams["figure.figsize"] = (6.5 * 0.7, 6.5 * 0.75 * 0.7)  # Bachelor Thesis page width and 4.32=good looking
+        # plt.rcParams.update({'font.size': 11})
+        # plt.rcParams["figure.figsize"] = (6.5 * 0.6, 6.5 * 0.75 * 0.6)  # Bachelor Thesis page width and 4.32=good looking
+        # for x in range(0,len(lambdalist)):
+        #     lambdalist[x] = lambdalist[x]/1.25
+        plt.plot(all_lambda, temp)
+        # plt.yscale("log")
+        plt.ylabel("Score")
+        plt.xlabel("$\lambda$")
+        plt.tight_layout()
+        # plt.savefig(r"F:\Uni Goethe\Informatik\BA\Latex\figure\lambdasearch_scores.pgf")  # , bbox_inches='tight')
+        # plt.savefig(r"F:\Uni Goethe\Informatik\BA\Latex\figure\lambdasearch_scores_small.pgf")  # , bbox_inches='tight')
+        plt.show()
     return best_lambda_convar, min_error_convar, best_lambda_convar_indx
 
 def generate_lambda_list(start_range, end_range, increment):
@@ -119,7 +141,7 @@ def generate_lambda_list(start_range, end_range, increment):
     return list(np.arange(start_range, end_range, increment))
 
 def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_100=False, normalize=True,
-                     adapt_lr_bool=True, convar_algo="numpy", convar_num_iters=2000, early_stop_bool=False,
+                     adapt_lr_bool=True, convar_algo="numpy", convar_num_iters=2000, early_stop_bool=False, firdif_best_omega=None,
                      binary_seach_find_bool=False,
                      printers=1):
     """Docstring"""
@@ -147,6 +169,10 @@ def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_
         num_workers = multiprocessing.cpu_count()-1
 
 
+    # Normalize Data to [0,1]
+    if(normalize): data = helpers.normalize_1_0(data)
+
+
     # Carry over from MatLab
     if(times_100):data = data * 100
 
@@ -160,7 +186,7 @@ def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_
     odd_traces = data[0::2]
 
     # Create partial for MP
-    partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, adapt_lr_bool=adapt_lr_bool, printers=workers_printers)
+    partial_f = partial(convar.convar_np, odd_traces, gamma, num_iters=convar_num_iters, early_stop_bool=early_stop_bool, adapt_lr_bool=adapt_lr_bool, printers=workers_printers, firdif_omega=firdif_best_omega)
 
     start = time.time()
     if(not binary_seach_find_bool):
@@ -264,6 +290,18 @@ def find_best_lambda(data, gamma=0.97, num_workers=None, all_lambda=None, times_
 
     return best_lambda_convar
 
+def find_best_omega(data, gamma=0.97, normalize=True):
+    """
+    Wrapper for firdif.firdif_best_window to find best smoothing factor omega (or smt).
+    :param data:
+    :param gamma:
+    :param normalize:
+    :return:
+    """
+    # Normalize Data to [0,1]
+    if(normalize): data = helpers.normalize_1_0(data)
+    return firdif.firdif_best_window(data, gamma)
+
 """
 Argument List:
 data                - input numpy ndarray TxP
@@ -290,7 +328,7 @@ def deconvolve(
     data, gamma=0.97, best_lambda=1, times_100=False, normalize=True,
     num_workers=None,
     chunk_t_bool=False, chunk_size=100, chunk_overlap=10, chunk_overlap_steal = 0, chunk_overlap_blend = 0,
-    adapt_lr_bool=True, convar_num_iters=10000, convar_earlystop_metric=None, convar_earlystop_threshold=None,
+    adapt_lr_bool=True, convar_num_iters=10000, convar_earlystop_metric=None, convar_earlystop_threshold=None, firdif_best_omega=None,
     printers=1):
     """Docstring"""
 
@@ -341,9 +379,8 @@ def deconvolve(
     # STARTING DECONV
 
     # Creating convar function with prefilled arguments (so Pool.map can be used)
-    lambda_convar = partial(__convar_arg_reorganizer, gamma, best_lambda, convar_num_iters, adapt_lr_bool, convar_earlystop_metric, convar_earlystop_threshold, workers_printers)
+    lambda_convar = partial(__convar_arg_reorganizer, gamma, best_lambda, convar_num_iters, adapt_lr_bool, convar_earlystop_metric, convar_earlystop_threshold, workers_printers, firdif_best_omega)
 
-    #Todo add convar_algo capability
 
     start = time.time()
     if(chunk_t_bool and num_workers>0):
@@ -432,9 +469,9 @@ def deconvolve(
 
     return r_final,r1,beta_0
 
-def __convar_arg_reorganizer(gamma, _lambda, num_iters, adapt_lr_bool, early_stop_metric_f, early_stop_threshold, printers, data):
+def __convar_arg_reorganizer(gamma, _lambda, num_iters, adapt_lr_bool, early_stop_metric_f, early_stop_threshold, printers, firdif_best_omega, data):
     """Needed for functool.partials (maybe?).. Else I'll use lambdas.."""
-    return convar.convar_np(data, gamma, _lambda, num_iters=num_iters, adapt_lr_bool=adapt_lr_bool, early_stop_metric_f=early_stop_metric_f, early_stop_threshold=early_stop_threshold, printers=printers)
+    return convar.convar_np(data, gamma, _lambda, num_iters=num_iters, adapt_lr_bool=adapt_lr_bool, early_stop_metric_f=early_stop_metric_f, early_stop_threshold=early_stop_threshold, printers=printers, firdif_omega=firdif_best_omega)
 
 def fit_gamma(new_frame_rate):
     #gamma               - calcium decay rate (single neuron, based on 40Hz measurments in Gcamp6f mice)

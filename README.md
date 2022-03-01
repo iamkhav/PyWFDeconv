@@ -14,4 +14,5 @@ Numba doesn't support newer Python Version atm (Mar 2021).
 However, basic PyWFDeconv functionalities work with Python 3.9.
 
 ## 2. Usage
-Use wrappers.
+Have a look at the template_main.py.  
+Be sure to read my thesis included in this repo for more information on speedup measures.

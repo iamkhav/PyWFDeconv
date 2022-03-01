@@ -9,7 +9,6 @@ merav_data_path = r"ExampleData/Clancy_etal_fluorescence_example.mat"
 jonas_data_path = r"ExampleData/F0205_tseries_38_DF_by_F0_351_50_cut200_600_compressed.npz"
 
 
-# 1. Import data into a numpy ndarray, expected format: 2d TxP ndarray (T:frames, P:pixels)
 npz_file = np.load(jonas_data_path)
 data = npz_file["data"]
 data = data[:, :]

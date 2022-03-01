@@ -111,7 +111,7 @@ def thesis_overlap_comparison():
     chunked_blend,_,_ = wfd.deconvolve(data, 0.92, thislambda, chunk_t_bool=True, chunk_size=chunk_size, chunk_overlap=overlap, num_workers=0, chunk_overlap_blend=30)
     # chunked_steal,_,_ = wfd.deconvolve(data,0.92,thislambda,chunk_t_bool=True,chunk_size=chunk_size,chunk_overlap=overlap,num_workers=0,chunk_overlap_steal=30)
 
-    start_Frame = 400
+    start_Frame = 10
 
     average_original = []
     for i in data[start_Frame:]:
@@ -144,9 +144,9 @@ def thesis_overlap_comparison():
     plt.rcParams["figure.figsize"] = (6.5*0.45, 6.5*0.75*0.45)                # Bachelor Thesis page width and 4.32=good looking
 
     # plt.plot(average_original, label="Original", linewidth=2, alpha=0.2, color="b")
-    plt.plot(average_nochunk[:1200], label="No chunks", linewidth=2, color="tab:green", alpha=0.6)
-    plt.plot(average_chunked[:1200], label="$T=400$ chunks", linewidth=2, color="tab:blue")
-    # plt.plot(average_blend[:1200], label="$T=400$ chunks, blended", linewidth=2, color="tab:orange")
+    plt.plot(average_nochunk[400:1600], label="No chunks", linewidth=2, color="tab:green", alpha=0.6)
+    plt.plot(average_chunked[400:1600], label="$T=400$ chunks", linewidth=2, color="tab:blue")
+    # plt.plot(average_blend[400:1600], label="$T=400$ chunks, blended", linewidth=2, color="tab:orange")
 
     plt.ylabel("$r_t$")
     plt.xlabel("$t$")
@@ -154,7 +154,7 @@ def thesis_overlap_comparison():
     plt.legend()
     plt.axis([330, 410, 0, 1])
     plt.axvline(x=400, color="crimson", linestyle=":", linewidth=2, label="Chunk intersection")
-    plt.text(361, 0.55, "Chunk intersection", color="crimson")
+    plt.text(357, 0.5, "Chunk intersection", color="crimson")
     plt.tight_layout(pad=0)
     # plt.show()
     plt.savefig(r"F:\Uni Goethe\Informatik\BA\Latex\figure\chunking_error1.pgf")
@@ -169,9 +169,9 @@ def thesis_overlap_comparison():
     plt.rcParams["figure.figsize"] = (6.5*0.45, 6.5*0.75*0.45)                # Bachelor Thesis page width and 4.32=good looking
 
     # plt.plot(average_original, label="Original", linewidth=2, alpha=0.2, color="b")
-    plt.plot(average_nochunk[:1200], label="No chunks", linewidth=2, color="tab:green", alpha=0.6)
-    # plt.plot(average_chunked[:1200], label="$T=400$ chunks", linewidth=2, color="tab:blue")
-    plt.plot(average_blend[:1200], label="$T=400$ chunks, blended", linewidth=2, color="tab:orange")
+    plt.plot(average_nochunk[400:1600], label="No chunks", linewidth=2, color="tab:green", alpha=0.6)
+    # plt.plot(average_chunked[400:1600], label="$T=400$ chunks", linewidth=2, color="tab:blue")
+    plt.plot(average_blend[400:1600], label="$T=400$ chunks, blended", linewidth=2, color="tab:orange")
 
     plt.ylabel("$r_t$")
     plt.xlabel("$t$")
@@ -179,12 +179,12 @@ def thesis_overlap_comparison():
     plt.legend()
     plt.axis([330, 410, 0, 1])
     plt.axvline(x=400, color="crimson", linestyle=":", linewidth=2, label="Chunk intersection")
-    plt.text(361, 0.55, "Chunk intersection", color="crimson")
+    plt.text(357, 0.5, "Chunk intersection", color="crimson")
     plt.tight_layout(pad=0)
     # plt.show()
     plt.savefig(r"F:\Uni Goethe\Informatik\BA\Latex\figure\chunking_error2.pgf")
     plt.close()
-
+    return
 
 
 
@@ -200,8 +200,8 @@ def thesis_overlap_comparison():
     diff_blend = average_nochunk - average_blend
     # diff_steal = average_nochunk - average_steal
     plt.axhline(y=0, color="g", linestyle=':', linewidth=2)
-    plt.plot(diff[:1200], label="No blend", linewidth=2)
-    plt.plot(diff_blend[:1200], label="Blend", linewidth=2)
+    plt.plot(diff[400:1600], label="No blend", linewidth=2)
+    plt.plot(diff_blend[400:1600], label="Blend", linewidth=2)
     # plt.plot(diff_steal, label="Steal")
     plt.ylabel("Difference")
     plt.xlabel("$t$")

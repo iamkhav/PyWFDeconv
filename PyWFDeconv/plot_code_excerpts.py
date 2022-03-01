@@ -617,6 +617,7 @@ def calcium_decay_func(gamma, iters):
 def dirac_calcium_conv():
     calcium = calcium_decay_func(0.97, 200)
     full_dim = 40
+    # full_dim = 33
     full_range = np.arange(1, full_dim)
     spike_list = [1, 7, 27, 31]
     dirac = np.empty((full_dim))
@@ -740,20 +741,24 @@ def dirac_calcium_conv():
     # plt.show()
     # plt.close()
 
-
+    nr=4
 
 
     """ BACHELOR THESIS PLOTS """
-    # # Plot 2 Calcium
-    # plt.rcParams.update({'font.size': 14})
-    # plt.rcParams["figure.figsize"] = (5, 4)
-    # plt.plot(calcium)
-    # plt.title("$calc\_decay_{40hz}(t) = 0.97^t$")
-    # plt.ylabel("$y$")
-    # plt.xlabel("$t$")
-    # plt.tight_layout()
-    # plt.show()
-    # plt.close()
+    if(nr == 1):
+        # Plot 2 Calcium
+        # plt.rcParams.update({'font.size': 14})
+        # plt.rcParams["figure.figsize"] = (5, 4)
+        plt.rcParams.update({'font.size': 10})
+        plt.rcParams["figure.figsize"] = (6.5*0.45, 6.5*0.75*0.45)                # Bachelor Thesis page width and 4.32=good looking
+        plt.plot(calcium)
+        plt.title("$calc\_decay_{40Hz}(t) = 0.97^t$", fontsize=11)
+        plt.ylabel("$y$")
+        plt.xlabel("$t$")
+        plt.tight_layout(pad=0)
+        # plt.show()
+        plt.savefig(r"F:\Uni Goethe\Informatik\BA\Latex\figure\fundamentals_decay.pgf")
+        plt.close()
 
     # # Plot 6 Single Dirac
     # full_dim = 10
@@ -781,28 +786,32 @@ def dirac_calcium_conv():
     # plt.tight_layout()
     # plt.show()
     # plt.close()
+    if (nr == 2):
+        # # Plot 1 Dirac
+        # plt.rcParams.update({'font.size': 14})
+        # plt.rcParams["figure.figsize"] = (5, 4)
+        plt.rcParams.update({'font.size': 10})
+        plt.rcParams["figure.figsize"] = (6.5*0.45, 6.5*0.75*0.45)                # Bachelor Thesis page width and 4.32=good looking
+        fig, ax = plt.subplots()
+        plt.plot(dirac, color="tab:blue", linestyle="None", marker="o", markersize=1.0)
+        # plt.plot(dirac, linestyle="None", color="tab:blue", marker="^", markevery=spike_list, markersize=10.0)
+        plt.plot(dirac, linestyle="None", color="tab:blue", marker="^", markevery=spike_list, markersize=6.0)
+        # Draw Lines
+        lines = []
+        for i in range(0, len(spike_list)):
+            pair = [(spike_list[i], 0), (spike_list[i], 1)]
+            lines.append(pair)
+        linecoll = matcoll.LineCollection(lines, color="tab:blue")
+        ax.add_collection(linecoll)
 
-    # # # Plot 1 Dirac
-    # plt.rcParams.update({'font.size': 14})
-    # plt.rcParams["figure.figsize"] = (5, 4)
-    # fig, ax = plt.subplots()
-    # plt.plot(dirac, color="tab:blue", linestyle="None", marker="o", markersize=1.0)
-    # plt.plot(dirac, linestyle="None", color="tab:blue", marker="^", markevery=spike_list, markersize=10.0)
-    # # Draw Lines
-    # lines = []
-    # for i in range(0, len(spike_list)):
-    #     pair = [(spike_list[i], 0), (spike_list[i], 1)]
-    #     lines.append(pair)
-    # linecoll = matcoll.LineCollection(lines, color="tab:blue")
-    # ax.add_collection(linecoll)
-    #
-    # plt.ylabel("$y$")
-    # plt.xlabel("$t$")
-    # plt.yticks([])
-    # plt.title("$spikes(t)$")
-    # plt.tight_layout()
-    # plt.show()
-    # plt.close()
+        plt.ylabel("$y$")
+        plt.xlabel("$t$")
+        plt.yticks([])
+        plt.title("$spikes(t)$", fontsize=11)
+        plt.tight_layout(pad=0)
+        # plt.show()
+        plt.savefig(r"F:\Uni Goethe\Informatik\BA\Latex\figure\fundamentals_dirac.pgf")
+        plt.close()
 
     # # # # Plot 3 Conved
     # plt.rcParams.update({'font.size': 14})
@@ -814,34 +823,42 @@ def dirac_calcium_conv():
     # plt.tight_layout()
     # plt.show()
     # plt.close()
-
-    # # # Plot 3b Conved with Dirac
-    # plt.rcParams.update({'font.size': 14})
-    # plt.rcParams["figure.figsize"] = (5, 4)
-    # plt.title("$spikes(t)\ \circledast\ calc\_decay_{40hz}(t)$")
-    # # Delta function
-    # # for x in spike_list:
-    # #     plt.plot([x, x], [0, 1], color="m")
-    # for xc in spike_list:
-    #     plt.axvline(x=xc, color='orange', linestyle='--', alpha=0.65)
-    # # Conved
-    # plt.plot(conved[:65])
-    # plt.ylabel("$Measured\ fluorescence$")
-    # plt.xlabel("$t$")
-    # plt.tight_layout()
-    # plt.show()
-    # plt.close()
-
-    # Plot 4 Conved with noise
-    plt.rcParams.update({'font.size': 14})
-    plt.rcParams["figure.figsize"] = (5, 4)
-    plt.title("$spikes(t)\ \circledast\ calc\_decay_{40hz}(t)\ \circledast\ noise$", fontsize=13)
-    conved_with_noise += np.abs(np.min(conved_with_noise))
-    conved_with_noise[0] = 0
-    plt.plot(conved_with_noise[:65])
-    plt.ylabel("$Measured\ fluorescence$")
-    plt.xlabel("$t$")
-    plt.tight_layout()
-    plt.show()
-    plt.close()
+    if(nr == 3):
+        # # Plot 3b Conved with Dirac
+        # plt.rcParams.update({'font.size': 14})
+        # plt.rcParams["figure.figsize"] = (5, 4)
+        plt.rcParams.update({'font.size': 10})
+        plt.rcParams["figure.figsize"] = (6.5*0.45, 6.5*0.75*0.45)                # Bachelor Thesis page width and 4.32=good looking
+        plt.title("$spikes(t)\ \circledast\ calc\_decay_{40Hz}(t)$", fontsize=10)
+        # Delta function
+        # for x in spike_list:
+        #     plt.plot([x, x], [0, 1], color="m")
+        for xc in spike_list:
+            plt.axvline(x=xc, color='orange', linestyle='--', alpha=0.65)
+        # Conved
+        plt.plot(conved[:65])
+        plt.ylabel("Measured fluorescence")
+        plt.xlabel("$t$")
+        plt.tight_layout(pad=0)
+        # plt.show()
+        plt.savefig(r"F:\Uni Goethe\Informatik\BA\Latex\figure\fundamentals_conved_vlines.pgf")
+        plt.close()
+    if(nr == 4):
+        # Plot 4 Conved with noise
+        # plt.rcParams.update({'font.size': 14})
+        # plt.rcParams["figure.figsize"] = (5, 4)
+        plt.rcParams.update({'font.size': 10})
+        plt.rcParams["figure.figsize"] = (6.5*0.45, 6.5*0.75*0.45)                # Bachelor Thesis page width and 4.32=good looking
+        # plt.title("$spikes(t)\ \circledast\ calc\_decay_{40hz}(t)$ with noise", fontsize=13)
+        plt.title("$spikes(t)\ \circledast\ calc\_decay_{40Hz}(t)$ with noise", fontsize=10)
+        conved_with_noise += np.abs(np.min(conved_with_noise))
+        conved_with_noise[0] = 0
+        plt.plot(conved_with_noise[:65])
+        # plt.ylabel("$Measured\ fluorescence$")
+        plt.ylabel("Measured fluorescence")
+        plt.xlabel("$t$")
+        plt.tight_layout(pad=0)
+        # plt.show()
+        plt.savefig(r"F:\Uni Goethe\Informatik\BA\Latex\figure\fundamentals_conved_noise12.pgf")
+        plt.close()
 

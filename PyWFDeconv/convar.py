@@ -3,7 +3,6 @@ from scipy import linalg
 # import torch
 import time
 from math import ceil
-import matplotlib.pyplot as plt
 from . import (
     firdif,
     early_stops,
@@ -24,6 +23,7 @@ def convar_np(
     early_stop_bool=True, early_stop_metric_f=None, early_stop_threshold=None, return_stop_iter=False,
     num_iters=10000,
     adapt_lr_bool=False, gradient_rollback=False, instant_lr_boost=True,
+    firdif_find_best_omega_bool=False, firdif_omega=None,
     printers=True, return_metric_gradients=False
         ):
     """
@@ -37,6 +37,8 @@ def convar_np(
         # early_stop_threshold = 0.000001            # For plot_gradient_improvements
     if(early_stop_metric_f==None):
         early_stop_metric_f = early_stops.mean_abs
+    if(firdif_omega==None):
+        firdif_omega = 3
 
     if(not adapt_lr_bool and gradient_rollback):
         print("Adapt LR deactivated but Gradient Rollback activated!")
@@ -92,7 +94,11 @@ def convar_np(
     elif(init_out_matrix_method == "point5"):
         r = np.zeros((np.shape(y)[0], np.shape(y)[1])) + 0.5
     elif(init_out_matrix_method == "firdif"):
-        r_a, r_b, _ = firdif.firdif_np(y, gamma, 3)
+        if(firdif_find_best_omega_bool):
+            best_smt = firdif.firdif_best_window(y, gamma)
+            r_a, r_b, _ = firdif.firdif_np(y, gamma, best_smt)
+        else:
+            r_a, r_b, _ = firdif.firdif_np(y, gamma, firdif_omega)     # Todo Set default_smt to 7 default sometime?
         r = np.concatenate((r_b, r_a))
     elif(init_out_matrix_method == "input"):
         r = init_output_mat

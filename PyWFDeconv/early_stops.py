@@ -1,5 +1,5 @@
 import numpy as np
-import torch
+# import torch
 """
 Defaults:
 mean_threshold : 0.00001
@@ -17,9 +17,9 @@ def mean_threshold(gradient, threshold=0.00001):
     if(np.mean(np.abs(gradient)) < threshold):
         return True
 
-def mean_threshold_torch(gradient, threshold=0.00001):
-    if(torch.abs(torch.mean(gradient)) < threshold):
-        return True
+# def mean_threshold_torch(gradient, threshold=0.00001):
+#     if(torch.abs(torch.mean(gradient)) < threshold):
+#         return True
 
 
 

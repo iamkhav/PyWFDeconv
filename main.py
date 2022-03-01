@@ -26,6 +26,17 @@ import timeit
 import datetime
 # import cProfile
 # import time
+import matplotlib
+## For Thesis Plots
+matplotlib.use("pgf")
+matplotlib.rcParams.update({
+    "pgf.texsystem": "pdflatex",
+    'font.family': 'serif',
+    'text.usetex': True,
+    'pgf.rcfonts': False,
+    "pgf.preamble": r"\usepackage{amsmath,amsfonts,amsthm,amssymb}"
+
+})
 
 example_data_path = r"ExampleData/Clancy_etal_fluorescence_example.mat"
 h5_path = r"ExampleData/data_Jonas.hdf5"
@@ -62,7 +73,7 @@ You should monitor CPU load % while using a single worker to see how a single co
 # torch.set_default_dtype(torch.float64)
 
 if __name__ == '__main__':
-    mode = 7
+    mode = 10
     print(f"Launching program.. at {datetime.datetime.now()}")
 
     if(mode == 1):
@@ -71,8 +82,9 @@ if __name__ == '__main__':
         # cal_data should be formatted in a way that axis=0 is T while axis=1 is x,y flattened of the input image
         data_import = loadmat(example_data_path)
         cal_data = data_import["cal_data"]
-
-        deconv_Dff.deconv(cal_data=cal_data)
+        print(np.shape(cal_data))
+        firdif.firdif_best_window(cal_data)
+        # deconv_Dff.deconv(cal_data=cal_data)
         # deconv_Dff.deconv_multicore(cal_data=cal_data)
         # deconv_Dff_experimental.deconv_multicore_ray(cal_data=cal_data)
         # deconv_Dff_experimental.deconv_torch_jit(cal_data=cal_data)
@@ -109,6 +121,7 @@ if __name__ == '__main__':
 
         # Clean the data (if you suspect or know about Inf/NaN regions)
         cleaned_df_fo = helpers.CleanDFFO(df_fo, ROI=ROI)
+        print(np.shape(cleaned_df_fo))
 
 
     if(mode == 6):
@@ -193,7 +206,7 @@ if __name__ == '__main__':
 
         # Sliced T vs regular
         # plot_slicedT_vs_regular.compare_slice_vs_regular(data)
-        plot_slicedT_vs_regular.thesis_overlap_comparison()
+        # plot_slicedT_vs_regular.thesis_overlap_comparison()
 
         # Print dirac * calcium
         # plot_code_excerpts.dirac_calcium_conv()
@@ -202,7 +215,7 @@ if __name__ == '__main__':
         # plot_lineperline_convar.convar_np_at(data, 0.97, 1)
 
         # Show Gradient with sequentially added features
-        # plot_gradient_improvements.show_plots(1)
+        # plot_gradient_improvements.show_plots(plotnr=0)
         # plot_code_excerpts.meanGradient_over_t(cal_data, 0.97, 1) # OLD WAY OF DOING IT
 
         # Show divergence
@@ -211,22 +224,36 @@ if __name__ == '__main__':
         # Test fuer Matthias Kaschube
         # plot_generic_functions.plot_every_trace_every_way_and_save(helpers.normalize_1_0(data))
 
+
+        """ BACHELOR PLOTS """
+        # plot_code_excerpts.dirac_calcium_conv()             # decay, spikes, conved_vlines, convednoise12
+        # plot_matmul_complexity.bachelor_chunking()          # Chunking loglog and chunking comparison
+        # plot_slicedT_vs_regular.thesis_overlap_comparison()         # Chunking error 1 and 2 and chunking_diff
+        # plot_gradient_improvements.firdif_omegacomparison()         # gradient_firdif_omega
+        # plot_gradient_improvements.show_plots(phase=0)             # gradients_phase1 and gradients_phase2 and gradients_phase_3
+
+
     if(mode == 10):
         """Main Function using Wrappers"""
 
         # 1. Import data into a numpy ndarray, expected format: 2d TxP ndarray (T:frames, P:pixels)
-        npz_file = np.load(npz_path)
-        data = npz_file["data"]
-        data = data[:, :]
-        # data_import = loadmat(example_data_path)
-        # cal_data = data_import["cal_data"]
-        # data = cal_data
+        # npz_file = np.load(npz_path)
+        # data = npz_file["data"]
+        # data = data[:400, :50] # Best lambda is 2
+        # data = data[:400, 30:50] # Best lambda is 2
+        data_import = loadmat(example_data_path)
+        cal_data = data_import["cal_data"]
+        data = cal_data
 
 
         # 2. Determine which lambda yields best results
-        # lambda_list = wfd.generate_lambda_list(0.5,4,0.1)
+        lambda_list = wfd.generate_lambda_list(1,2.5,0.01)
+        # lambda_list = wfd.generate_lambda_list(0.1,4.1,0.1)
+        # best_lambda = wfd.find_best_lambda(data, gamma=0.92, convar_num_iters=2000, adapt_lr_bool=True, all_lambda=lambda_list, binary_seach_find_bool=False, early_stop_bool=False)        # Jonas data, Gamma adjusted
+        # best_lambda = wfd.find_best_lambda(data, gamma=0.92, convar_num_iters=2000, adapt_lr_bool=True, binary_seach_find_bool=False, early_stop_bool=False)        # Jonas data, Gamma adjusted
+
         # best_lambda = wfd.find_best_lambda(data[:200, :1000], gamma=0.92, convar_num_iters=2000, adapt_lr_bool=True, num_workers=0)        # Jonas data, Gamma adjusted
-        # best_lambda = wfd.find_best_lambda(data[:200, :1000], gamma=0.92, convar_num_iters=2000, adapt_lr_bool=True, binary_seach_find=True, all_lambda=lambda_list)
+        # best_lambda = wfd.find_best_lambda(data[:200, :1000], gamma=0.92, convar_num_iters=2000, adapt_lr_bool=True, binary_seach_find_bool=True, all_lambda=lambda_list)
 
         # 3. Deconvolve using best lambda
         deconvolved, _, _ = wfd.deconvolve(data[:, :], gamma=0.92, best_lambda=5, adapt_lr_bool=True, num_workers=8, convar_earlystop_threshold=0.000001, printers=2)
